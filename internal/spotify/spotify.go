@@ -24,14 +24,19 @@ import (
 
 var (
 	authVars      *authVarsModel
-	authURL       string
 	authDone      bool
 	authenticator *apiauth.Authenticator
 	client        *api.Client
 	context       ctx.Context  = ctx.Background()
-	srv           *http.Server //Server Gin usato per la ricezione del token per l'autenticazione
+	srv           *http.Server // Gin server used to receive the auth token
 	ch            = make(chan *api.Client)
 )
+
+type Playlist struct {
+	ID        api.ID   `json:"id"`
+	Name      string   `json:"name"`
+	TracksIDs []api.ID `json:"tracks"`
+}
 
 func IsAuthenticated() bool {
 	return authDone
@@ -134,6 +139,8 @@ func recuperaAuthVars() (err error) {
 	return nil
 }
 
+//-> Auth and auth server functions
+
 // Funzione per avviare il server Gin e gestire un eventuale errore
 func avviaServer() {
 	err := srv.ListenAndServe()
@@ -146,12 +153,12 @@ func avviaServer() {
 
 // Auth: Funzione per l'autenticazione con Spotify
 func Auth() (err error) {
-	authenticator = apiauth.New(apiauth.WithRedirectURL("http://localhost/api/auth"), apiauth.WithScopes(apiauth.ScopeUserReadPrivate, apiauth.ScopePlaylistReadPrivate, apiauth.ScopePlaylistReadCollaborative))
+	authenticator = apiauth.New(apiauth.WithRedirectURL("http://localhost/api/auth"), apiauth.WithScopes(apiauth.ScopeUserReadPrivate, apiauth.ScopePlaylistReadPrivate, apiauth.ScopePlaylistReadCollaborative, apiauth.ScopePlaylistModifyPrivate))
 
 	token, err := leggiAuthToken()
 	if err == nil {
 		if token.Valid() {
-			//Token scaduto
+			//Token expired
 			log.Info("Token per l'autenticazione scaduto. Verrà riefettuata l'autenticazione.")
 			token, err = authenticator.RefreshToken(context, token)
 			if err != nil {
@@ -164,8 +171,8 @@ func Auth() (err error) {
 		return nil
 
 	} else {
-		//Generazione dell'authURL
-		authURL = authenticator.AuthURL(authVars.State)
+		//authURL generation
+		authURL := authenticator.AuthURL(authVars.State)
 		log.Info("URL per l'autenticazione generata")
 
 		fmt.Println("Apri questo URL per autenticarti: " + authURL)
@@ -174,22 +181,18 @@ func Auth() (err error) {
 			return errors.New("URL di autenticazione non disponibile")
 		}
 
-		// Avvio del server
+		// Starting the server
 		log.Info("Avvio il server per l'autenticazione...")
 
 		go avviaServer()
 
-		// wait for auth to complete
-		client := <-ch
+		// Wait for auth to complete
+		client = <-ch
+
+		// Auth completed
 		log.Info("Autenticazione completata")
 
-		user, err := client.CurrentUser(context)
-		if err != nil {
-			log.Fatal(err)
-		}
-		fmt.Println("Effettuato il login come: ", user.ID)
-
-		//Chiusura del server
+		// Closing the server
 		shutdownCtx, shutdownRelease := ctx.WithTimeout(ctx.Background(), 10*time.Second)
 		defer shutdownRelease()
 
@@ -203,7 +206,7 @@ func Auth() (err error) {
 	}
 }
 
-// Endpoint per l'autenticazione
+// Authentication endpoint for the gin(http) server
 func authEndpoint(ctx *gin.Context) {
 	token, err := authenticator.Token(context, authVars.State, ctx.Request)
 	if err != nil {
@@ -217,12 +220,10 @@ func authEndpoint(ctx *gin.Context) {
 		log.Error("Errore nel salvataggio del token per l'autenticazione: " + err.Error())
 	}
 
-	//Salvataggio del client nella variabile client per l'uso globale
-	client = api.New(authenticator.Client(context, token))
 	ctx.String(http.StatusOK, "Autenticazione completata con successo. Ora puoi chiudere questa pagina.")
 
-	//Invio del client al canale ch per continuare l'esecuzione
-	ch <- client
+	//Continue the auth process and send the client
+	ch <- api.New(authenticator.Client(context, token))
 }
 
 //-> Parte per la gestione del token per l'autenticazione
@@ -251,6 +252,12 @@ func salvaAuthToken(token *oauth2.Token) (err error) {
 		return
 	}
 
+	//Dir exists?
+	if _, err := os.Stat("data/auth"); os.IsNotExist(err) {
+		os.MkdirAll("data/auth", 0644) // Create dir if not exists
+	}
+
+	//Write file
 	err = os.WriteFile("data/auth/token.json", data, 0644)
 	if err != nil {
 		return
@@ -289,4 +296,35 @@ func GetTracks(playlistID api.ID) ([]api.PlaylistItem, error) {
 		}
 		tracklist = append(tracklist, res.Items...)
 	}
+}
+
+func GetUserID() (string, error) {
+	user, err := client.CurrentUser(context)
+	if err != nil {
+		return "", err
+	}
+	return user.ID, nil
+}
+
+func RestorePlaylist(trackList []api.ID, playlistID api.ID) (err error) {
+	if len(trackList) > 100 {
+		for i := 0; i < len(trackList); i += 100 {
+			var tempTrackList []api.ID
+			if i+100 > len(trackList) {
+				tempTrackList = trackList[i:]
+			} else {
+				tempTrackList = trackList[i : i+100]
+			}
+			_, err = client.AddTracksToPlaylist(context, playlistID, tempTrackList...)
+			if err != nil {
+				return err
+			}
+		}
+	} else {
+		_, err = client.AddTracksToPlaylist(context, playlistID, trackList...)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
