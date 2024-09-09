@@ -25,7 +25,7 @@ func Display() (err error) {
 	//do while
 	for {
 		fmt.Println("--------------------------------------------------------")
-		fmt.Println("Playlist Manager v0.1.0\nSviluppato da Matteo Lombardi")
+		fmt.Println("Playlist Manager v0.2.1\nSviluppato da Matteo Lombardi")
 		fmt.Println("--------------------------------------------------------")
 		fmt.Print("Autenticato: ")
 		if spotify.IsAuthenticated() {
@@ -212,8 +212,21 @@ func Display() (err error) {
 			if err != nil {
 				return err
 			}
+			fmt.Println("0. Torna al menu")
 			for i, f := range files {
-				fmt.Printf("%d. %s\n", i+1, f.Name())
+				//Read file
+				tempData, err := os.ReadFile("data/backup/" + f.Name())
+				if err != nil {
+					return err
+				}
+
+				//Parse JSON
+				var tempPl spotify.Playlist
+				err = json.Unmarshal(tempData, &tempPl)
+				if err != nil {
+					return err
+				}
+				fmt.Printf("%d. %s (%s)\n", i+1, tempPl.Name, f.Name())
 			}
 
 			//Select file
@@ -223,11 +236,15 @@ func Display() (err error) {
 			if err != nil {
 				return err
 			}
-			if sel < 1 || sel > len(files) {
+			if sel < 0 || sel > len(files) {
 				fmt.Println("Selezione non valida")
 				fmt.Printf("\nPremi invio per tornare al menu...")
 				fmt.Scanf("\n\n")
 				break
+			} else {
+				if sel == 0 {
+					break
+				}
 			}
 
 			//Read file
