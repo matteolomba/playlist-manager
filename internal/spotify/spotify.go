@@ -32,23 +32,26 @@ var (
 	ch            = make(chan *api.Client)
 )
 
+// Playlist struct used to store the playlist data in json files to backup and restore them
 type Playlist struct {
 	ID        api.ID   `json:"id"`
 	Name      string   `json:"name"`
 	TracksIDs []api.ID `json:"tracks"`
 }
 
+// IsAuthenticated returns true if the user is authenticated or false otherwise
 func IsAuthenticated() bool {
 	return authDone
 }
 
-// Deve essere chiamato prima di qualsiasi altra funzione di questo package
+// Init initializes the Spotify API. It needs to be called before any other function in this package
 func Init() {
-	err := recuperaAuthVars()
+	err := getAuthVars()
 	if err != nil {
 		log.Fatal("Inizializzazione Spotify: recupero delle variabili per l'autenticazione", "error", err)
 	}
-	//Definizione del router di Gin e delle impostazioni correlate
+
+	//Gin router setup
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
 	store := cookie.NewStore([]byte(authVars.AuthKey))
@@ -61,28 +64,28 @@ func Init() {
 		},
 	}))
 
-	//Definizione del server
+	//Server setup
 	srv = &http.Server{
 		Addr:    ":80",
 		Handler: r,
 	}
 
-	// Endpoint per autenticazione
+	// Auth endpoint
 	r.GET("/api/auth", authEndpoint)
 }
 
-// -> Parte per la gestione delle variabili per l'autenticazione
-// Struct per parsing del file YAML data/auth/auth.yaml, contenente le variabili per l'autenticazione
+// -> Auth vars functions
+// Struct for parsing the YAML file data/auth/auth.yaml, containing the auth vars
 type authVarsModel struct {
 	State   string `yaml:"csrfState"`
 	AuthKey string `yaml:"authKey"`
 }
 
 /*
-Legge le variabili per l'autenticazione (authKey per i cookie e csrfState per evitare CSRF) dal file data/auth/auth.yaml
-Ritorna le variabili per l'autenticazione e un eventuale errore
+readAuthVars reads the auth vars (authKey for cookies and csrfState to avoid CSRF) from the data/auth/auth.yaml file
+Returns the auth vars and an error, if present
 */
-func leggiAuthVars() (vars *authVarsModel, err error) {
+func readAuthVars() (vars *authVarsModel, err error) {
 	vars = &authVarsModel{}
 	data, err := os.ReadFile("data/auth/auth.yaml")
 	if errors.Is(err, os.ErrNotExist) {
@@ -101,10 +104,10 @@ func leggiAuthVars() (vars *authVarsModel, err error) {
 }
 
 /*
-Crea le variabili per l'autenticazione (authKey per i cookie e csrfState per evitare CSRF) e le salva sul file data/auth/auth.yaml
-Ritorna le variabili per l'autenticazione e un eventuale errore
+createAuthVars creates the auth vars (authKey for cookies and csrfState to avoid CSRF) and saves them to the data/auth/auth.yaml file
+Returns the auth vars and an error, if present
 */
-func creaAuthVars() (vars *authVarsModel, err error) {
+func createAuthVars() (vars *authVarsModel, err error) {
 	csrfState := utils.RandomString(16)
 	authKey := utils.RandomString(16)
 	vars = &authVarsModel{
@@ -124,14 +127,19 @@ func creaAuthVars() (vars *authVarsModel, err error) {
 	return vars, nil
 }
 
-func recuperaAuthVars() (err error) {
-	//Lettura delle variabili per l'autenticazione
-	authVars, err = leggiAuthVars()
+/*
+getAuthVars reads the auth vars from the auth.yaml file and creates them if they don't exist
+Returns an error, if present
+*/
+func getAuthVars() (err error) {
+	//Reading auth vars,
+	authVars, err = readAuthVars()
 	if err != nil && !errors.Is(err, os.ErrNotExist) {
 		return err
 	}
+	// If the file doesn't exist or is empty, create new auth vars
 	if authVars.AuthKey == "" || authVars.State == "" {
-		authVars, err = creaAuthVars()
+		authVars, err = createAuthVars()
 		if err != nil {
 			return err
 		}
@@ -141,8 +149,8 @@ func recuperaAuthVars() (err error) {
 
 //-> Auth and auth server functions
 
-// Funzione per avviare il server Gin e gestire un eventuale errore
-func avviaServer() {
+// startServer starts the gin server to receive the auth token and makes the program crash if there is an error
+func startServer() {
 	err := srv.ListenAndServe()
 	if errors.Is(err, http.ErrServerClosed) {
 		log.Info("Server per l'autenticazione chiuso con successo")
@@ -151,11 +159,14 @@ func avviaServer() {
 	}
 }
 
-// Auth: Funzione per l'autenticazione con Spotify
+/*
+Auth authenticates the user and saves the token in the data/auth/token.json file
+Returns an error, if present
+*/
 func Auth() (err error) {
 	authenticator = apiauth.New(apiauth.WithRedirectURL("http://localhost/api/auth"), apiauth.WithScopes(apiauth.ScopeUserReadPrivate, apiauth.ScopePlaylistReadPrivate, apiauth.ScopePlaylistReadCollaborative, apiauth.ScopePlaylistModifyPrivate))
 
-	token, err := leggiAuthToken()
+	token, err := readAuthToken()
 	if err == nil {
 		if token.Valid() {
 			//Token expired
@@ -184,7 +195,7 @@ func Auth() (err error) {
 		// Starting the server
 		log.Info("Avvio il server per l'autenticazione...")
 
-		go avviaServer()
+		go startServer()
 
 		// Wait for auth to complete
 		client = <-ch
@@ -206,7 +217,7 @@ func Auth() (err error) {
 	}
 }
 
-// Authentication endpoint for the gin(http) server
+// authEndpoint is the authentication endpoint for the gin (http) server
 func authEndpoint(ctx *gin.Context) {
 	token, err := authenticator.Token(context, authVars.State, ctx.Request)
 	if err != nil {
@@ -215,7 +226,7 @@ func authEndpoint(ctx *gin.Context) {
 		return
 	}
 
-	err = salvaAuthToken(token)
+	err = saveAuthToken(token)
 	if err != nil {
 		log.Error("Errore nel salvataggio del token per l'autenticazione: " + err.Error())
 	}
@@ -226,9 +237,11 @@ func authEndpoint(ctx *gin.Context) {
 	ch <- api.New(authenticator.Client(context, token))
 }
 
-//-> Parte per la gestione del token per l'autenticazione
-
-func leggiAuthToken() (token *oauth2.Token, err error) {
+/*
+readAuthToken reads the auth token from the data/auth/token.json file.
+Returns the token and an error, if present
+*/
+func readAuthToken() (token *oauth2.Token, err error) {
 	token = &oauth2.Token{}
 	data, err := os.ReadFile("data/auth/token.json")
 	if errors.Is(err, os.ErrNotExist) {
@@ -246,7 +259,11 @@ func leggiAuthToken() (token *oauth2.Token, err error) {
 	return token, nil
 }
 
-func salvaAuthToken(token *oauth2.Token) (err error) {
+/*
+saveAuthToken saves the auth token (given as parameter) to the data/auth/token.json file
+Returns an error, if present
+*/
+func saveAuthToken(token *oauth2.Token) (err error) {
 	data, err := json.Marshal(token)
 	if err != nil {
 		return
@@ -266,10 +283,9 @@ func salvaAuthToken(token *oauth2.Token) (err error) {
 	return nil
 }
 
-/*
-Funzione per ottenere le playlist dell'utente, è necessario che l'utente sia autenticato (con funzione Auth())
-Ritorna la lista delle playlist e un eventuale errore
-*/
+//-> Playlist, track and user functions
+
+// GetPlaylists returns the playlists of the authenticated user and an error, if present
 func GetPlaylists() (pl []api.SimplePlaylist, err error) {
 	pl = []api.SimplePlaylist{}
 	user, err := client.CurrentUser(context)
@@ -280,6 +296,7 @@ func GetPlaylists() (pl []api.SimplePlaylist, err error) {
 	return res.Playlists, err
 }
 
+// GetTracks returns the tracks of a playlist, given its ID, and an error, if present
 func GetTracks(playlistID api.ID) ([]api.PlaylistItem, error) {
 	tracklist := []api.PlaylistItem{}
 	res, err := client.GetPlaylistItems(context, playlistID)
@@ -298,6 +315,7 @@ func GetTracks(playlistID api.ID) ([]api.PlaylistItem, error) {
 	}
 }
 
+// GetUserID returns the ID of the authenticated user and an error, if present
 func GetUserID() (string, error) {
 	user, err := client.CurrentUser(context)
 	if err != nil {
@@ -306,6 +324,10 @@ func GetUserID() (string, error) {
 	return user.ID, nil
 }
 
+/*
+RestorePlaylist restores a playlist given its ID and the list of tracks to restore
+Returns an error, if present
+*/
 func RestorePlaylist(trackList []api.ID, playlistID api.ID) (err error) {
 	if len(trackList) > 100 {
 		for i := 0; i < len(trackList); i += 100 {
