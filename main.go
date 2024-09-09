@@ -14,7 +14,7 @@ func init() {
 }
 
 func main() {
-	//-> Terminale
+	//-> Terminal
 	err := terminal.Display()
 	if err != nil {
 		log.Fatal(err)

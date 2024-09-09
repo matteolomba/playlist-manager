@@ -1,4 +1,4 @@
-// Contiene varie utilità
+// Contents: utility functions for the project
 package utils
 
 import (
@@ -11,7 +11,7 @@ import (
 	"strings"
 )
 
-// Genera una stringa random con una lunghezza specificata nel parametro n
+// RandomString generates a random string of length n
 func RandomString(n int) string {
 	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ@#$%&*1234567890"
 
@@ -22,7 +22,7 @@ func RandomString(n int) string {
 	return string(b)
 }
 
-// Converte la prima lettera di una stringa in maiuscolo, rendendola prima tutta in minuscolo
+// FirstUpper converts the first letter of a string to uppercase after converting the whole string to lowercase
 func FirstUpper(s string) string {
 	s = strings.ToLower(s)
 	if len(s) == 0 {
@@ -31,13 +31,13 @@ func FirstUpper(s string) string {
 	return strings.ToUpper(s[:1]) + s[1:]
 }
 
-// Converte una stringa in un int16
+// StrToInt16 converts a string to int16
 func StrToInt16(s string) (int16, error) {
 	v, err := strconv.ParseInt(s, 10, 16)
 	return int16(v), err
 }
 
-// Converte una stringa in minuscolo
+// Lower converts a string to lowercase
 func Lower(s string) string {
 	return strings.ToLower(s)
 }
@@ -60,7 +60,7 @@ func LevelStringToSlog(level string) slog.Level {
 	}
 }
 
-// ClearTerminal pulisce il terminale in base al sistema operativo (windows e linux implementati)
+// ClearTerminal clears the terminal screen based on the O.S. (linux and windows implemented)
 var clear = make(map[string]func()) //create a map for storing clear funcs
 
 func init() {
@@ -77,8 +77,8 @@ func init() {
 }
 
 func ClearTerminal() {
-	value, ok := clear[runtime.GOOS] //runtime.GOOS ritorna linux, windows, etc.
-	if ok {                          //Se il sistema operativo è supportato
+	value, ok := clear[runtime.GOOS] //runtime.GOOS returns linux, windows, etc.
+	if ok {                          //If the O.S. is supported
 		value()
 	} else { //unsupported platform
 		slog.Error("Sistema operativo non supportato. Non posso pulire il terminale.")
