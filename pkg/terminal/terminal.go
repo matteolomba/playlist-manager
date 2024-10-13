@@ -7,46 +7,37 @@ import (
 	"playlist-manager/internal/spotify"
 	"playlist-manager/pkg/utils"
 
+	"github.com/savioxavier/termlink"
 	spotifyapi "github.com/zmb3/spotify/v2"
 
 	log "playlist-manager/pkg/logger"
 )
 
 func Display() (err error) {
-	options := []string{"Autenticati su Spotify",
+	options := []string{
 		"Visualizza le playlist del tuo account",
 		"Visualizza i brani di una playlist del tuo account",
 		"Salva una playlist (Backup)",
 		"Carica una playlist (Restore)",
-		"Esci"}
+		"Visualizza e gestisci le playlist collegate",
+	}
 
 	var userID string
 
-	//do while
+	err = spotify.Auth()
+	if err != nil {
+		return err
+	}
+
 	for {
 		fmt.Println("--------------------------------------------------------")
-		fmt.Println("Playlist Manager v0.2.1\nSviluppato da Matteo Lombardi")
+		fmt.Println("Playlist Manager v0.2.1\nSviluppato da " + termlink.ColorLink("Matteo Lombardi", "https://github.com/matteolomba", "italic yellow"))
 		fmt.Println("--------------------------------------------------------")
-		fmt.Print("Autenticato: ")
-		if spotify.IsAuthenticated() {
-			fmt.Println("✅")
-
-			//Display user ID
-			if userID == "" {
-				userID, err = spotify.GetUserID()
-				if err != nil {
-					log.Error("Errore nel recupero dell'ID dell'utente", "error", err)
-				} else {
-					fmt.Println("Utente:", userID)
-				}
-			} else {
-				fmt.Println("Utente:", userID)
-			}
-
-		} else {
-			fmt.Println("❌")
-		}
+		displayAuthStatus(&userID)
 		fmt.Println("--------------------------------------------------------")
+		fmt.Println("-> Menù Principale <-")
+		fmt.Println("--------------------------------------------------------")
+		fmt.Printf("0. Esci\n")
 		for i, o := range options {
 			fmt.Printf("%d. %s\n", i+1, o)
 		}
@@ -61,13 +52,11 @@ func Display() (err error) {
 		fmt.Println()
 
 		switch sel {
-		case 1:
-			err = spotify.Auth()
-			if err != nil {
-				return err
-			}
+		case 0:
+			fmt.Println("Esco...")
+			return nil
 
-		case 2:
+		case 1: // Get playlists
 			if !spotify.IsAuthenticated() {
 				fmt.Println("Devi autenticarti prima di poter visualizzare le tue playlist")
 				fmt.Printf("\nPremi invio per tornare al menu...")
@@ -84,7 +73,7 @@ func Display() (err error) {
 			fmt.Printf("\nPremi invio per tornare al menu...")
 			fmt.Scanf("\n\n")
 
-		case 3:
+		case 2: // Get tracks from a playlist
 			if !spotify.IsAuthenticated() {
 				fmt.Println("Devi autenticarti prima di poter visualizzare i brani di una playlist")
 				fmt.Printf("\nPremi invio per tornare al menu...")
@@ -129,7 +118,7 @@ func Display() (err error) {
 			fmt.Printf("\nPremi invio per tornare al menu...")
 			fmt.Scanf("\n\n")
 
-		case 4:
+		case 3: // Save playlist (Backup) to JSON file
 			if !spotify.IsAuthenticated() {
 				fmt.Println("Devi autenticarti prima di poter salvare una playlist")
 				fmt.Printf("\nPremi invio per tornare al menu...")
@@ -199,7 +188,7 @@ func Display() (err error) {
 			fmt.Printf("\nPremi invio per tornare al menu...")
 			fmt.Scanf("\n\n")
 
-		case 5:
+		case 4: // Restore playlist from JSON file
 			if !spotify.IsAuthenticated() {
 				fmt.Println("Devi autenticarti prima di poter caricare una playlist")
 				fmt.Printf("\nPremi invio per tornare al menu...")
@@ -290,13 +279,35 @@ func Display() (err error) {
 			fmt.Printf("\nPremi invio per tornare al menu...")
 			fmt.Scanf("\n\n")
 
-		case 6:
-			fmt.Println("Esco...")
-			return nil
+		case 5: // Manage linked playlists
+			utils.ClearTerminal()
+			linkedMenu()
 
 		default:
 			fmt.Println("Scelta non valida o non ancora implementata")
 		}
 		utils.ClearTerminal()
+	}
+}
+
+func displayAuthStatus(userID *string) {
+	fmt.Print("Autenticato: ")
+	if spotify.IsAuthenticated() {
+		fmt.Println("✅")
+
+		//Display user ID
+		if *userID == "" {
+			userID, err := spotify.GetUserID()
+			if err != nil {
+				log.Error("Errore nel recupero dell'ID dell'utente", "error", err)
+			} else {
+				fmt.Println("Utente:", userID)
+			}
+		} else {
+			fmt.Println("Utente:", userID)
+		}
+
+	} else {
+		fmt.Println("❌")
 	}
 }

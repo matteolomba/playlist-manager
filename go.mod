@@ -8,6 +8,7 @@ require (
 	github.com/gin-contrib/sessions v1.0.0
 	github.com/gin-gonic/gin v1.9.1
 	github.com/joho/godotenv v1.4.0
+	github.com/savioxavier/termlink v1.4.1
 	github.com/utrack/gin-csrf v0.0.0-20190424104817-40fb8d2c8fca
 	github.com/zmb3/spotify/v2 v2.4.1
 	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8
