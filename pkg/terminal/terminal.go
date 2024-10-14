@@ -57,12 +57,6 @@ func Display() (err error) {
 			return nil
 
 		case 1: // Get playlists
-			if !spotify.IsAuthenticated() {
-				fmt.Println("Devi autenticarti prima di poter visualizzare le tue playlist")
-				fmt.Printf("\nPremi invio per tornare al menu...")
-				fmt.Scanf("\n\n")
-				break
-			}
 			pl, err := spotify.GetPlaylists()
 			if err != nil {
 				return err
@@ -74,12 +68,6 @@ func Display() (err error) {
 			fmt.Scanf("\n\n")
 
 		case 2: // Get tracks from a playlist
-			if !spotify.IsAuthenticated() {
-				fmt.Println("Devi autenticarti prima di poter visualizzare i brani di una playlist")
-				fmt.Printf("\nPremi invio per tornare al menu...")
-				fmt.Scanf("\n\n")
-				break
-			}
 			pl, err := spotify.GetPlaylists()
 			if err != nil {
 				return err
@@ -119,13 +107,6 @@ func Display() (err error) {
 			fmt.Scanf("\n\n")
 
 		case 3: // Save playlist (Backup) to JSON file
-			if !spotify.IsAuthenticated() {
-				fmt.Println("Devi autenticarti prima di poter salvare una playlist")
-				fmt.Printf("\nPremi invio per tornare al menu...")
-				fmt.Scanf("\n\n")
-				break
-			}
-
 			//Get playlists
 			pl, err := spotify.GetPlaylists()
 			if err != nil {
@@ -189,12 +170,6 @@ func Display() (err error) {
 			fmt.Scanf("\n\n")
 
 		case 4: // Restore playlist from JSON file
-			if !spotify.IsAuthenticated() {
-				fmt.Println("Devi autenticarti prima di poter caricare una playlist")
-				fmt.Printf("\nPremi invio per tornare al menu...")
-				fmt.Scanf("\n\n")
-				break
-			}
 
 			//Get files
 			files, err := os.ReadDir("data/backup")
