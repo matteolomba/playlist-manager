@@ -11,9 +11,9 @@ import (
 	"strings"
 )
 
-// RandomString generates a random string of length n
+// RandomString generates a random string of length n made of letters (lower and uppercase) and numbers
 func RandomString(n int) string {
-	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ@#$%&*1234567890"
+	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890"
 
 	b := make([]byte, n)
 	for i := range b {
