@@ -72,6 +72,23 @@ func Init() {
 
 	// Auth endpoint
 	r.GET("/api/auth", authEndpoint)
+
+	//Check and create the required dir
+	//Backup dir
+	if _, err := os.Stat("data/backup"); os.IsNotExist(err) {
+		os.MkdirAll("data/backup", 0644) // Create dir if not exists
+		log.Info("Cartella data/backup creata")
+	}
+	//Auth dir
+	if _, err := os.Stat("data/auth"); os.IsNotExist(err) {
+		os.MkdirAll("data/auth", 0644) // Create dir if not exists
+		log.Info("Cartella data/auth creata")
+	}
+	//Playlists dir
+	if _, err := os.Stat("data/playlists"); os.IsNotExist(err) {
+		os.MkdirAll("data/playlists", 0644) // Create dir if not exists
+		log.Info("Cartella data/playlists creata")
+	}
 }
 
 // -> Auth vars functions
@@ -267,11 +284,6 @@ func saveAuthToken(token *oauth2.Token) (err error) {
 	data, err := json.Marshal(token)
 	if err != nil {
 		return
-	}
-
-	//Dir exists?
-	if _, err := os.Stat("data/auth"); os.IsNotExist(err) {
-		os.MkdirAll("data/auth", 0644) // Create dir if not exists
 	}
 
 	//Write file

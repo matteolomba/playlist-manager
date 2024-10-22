@@ -154,11 +154,6 @@ func Display() (err error) {
 				return err
 			}
 
-			//Dir exists?
-			if _, err := os.Stat("data/backup"); os.IsNotExist(err) {
-				os.MkdirAll("data/backup", 0644) // Create dir if not exists
-			}
-
 			//Write file
 			err = os.WriteFile("data/backup/"+string(pl[sel-1].ID)+".json", jsonData, 0644)
 			if err != nil {
@@ -256,7 +251,10 @@ func Display() (err error) {
 
 		case 5: // Manage linked playlists
 			utils.ClearTerminal()
-			linkedMenu()
+			err := linkedMenu()
+			if err != nil {
+				return err
+			}
 
 		default:
 			fmt.Println("Scelta non valida o non ancora implementata")
