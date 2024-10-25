@@ -327,6 +327,34 @@ func GetTracks(playlistID api.ID) ([]api.PlaylistItem, error) {
 	}
 }
 
+// GetTrackIDs returns the IDs of the tracks (only music not podcasts) of a playlist, given its ID, and an error, if present
+func GetTrackIDs(playlistID api.ID) (trackIDs []api.ID, err error) {
+	tracklist := []api.PlaylistItem{}
+	res, err := client.GetPlaylistItems(context, playlistID)
+	if err != nil {
+		return nil, err
+	}
+	tracklist = append(tracklist, res.Items...)
+	for {
+		err = client.NextPage(context, res)
+		if err == api.ErrNoMorePages {
+			break
+		} else if err != nil {
+			return nil, err
+		}
+		tracklist = append(tracklist, res.Items...)
+	}
+	//Get track IDs from the tracklist
+	for _, t := range tracklist {
+		if t.Track.Track.ID == "" {
+			log.Warn("Brano non disponibile, potrebbe essere un podcast o un brano non disponibile su Spotify")
+		} else {
+			trackIDs = append(trackIDs, t.Track.Track.ID)
+		}
+	}
+	return trackIDs, nil
+}
+
 // GetUserID returns the ID of the authenticated user and an error, if present
 func GetUserID() (string, error) {
 	user, err := client.CurrentUser(context)
@@ -337,10 +365,10 @@ func GetUserID() (string, error) {
 }
 
 /*
-RestorePlaylist restores a playlist given its ID and the list of tracks to restore
+AddTracksToPlaylist adds the tracks (given the ID) from trackList to playlist given its ID (playlistID)
 Returns an error, if present
 */
-func RestorePlaylist(trackList []api.ID, playlistID api.ID) (err error) {
+func AddTracksToPlaylist(trackList []api.ID, playlistID api.ID) (err error) {
 	if len(trackList) > 100 {
 		for i := 0; i < len(trackList); i += 100 {
 			var tempTrackList []api.ID

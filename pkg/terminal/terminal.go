@@ -240,7 +240,7 @@ func Display() (err error) {
 			}
 
 			//Restore playlist
-			err = spotify.RestorePlaylist(playlist.TracksIDs, pl[sel-1].ID)
+			err = spotify.AddTracksToPlaylist(playlist.TracksIDs, pl[sel-1].ID)
 			if err != nil {
 				return err
 			}
