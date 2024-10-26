@@ -1,6 +1,7 @@
 package terminal
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -147,11 +148,13 @@ func showLinkedPlaylists() (err error) {
 
 func addLinkedPlaylist() (err error) {
 	lp := linkedPlaylist{}
-
 	fmt.Print("Che nome vuoi dare al collegamento tra le playlist? ")
-	_, err = fmt.Scan(&lp.Name)
-	if err != nil {
-		return err
+	scanner := bufio.NewScanner(os.Stdin)
+	for scanner.Scan() {
+		if scanner.Text() != "" {
+			lp.Name = scanner.Text()
+			break
+		}
 	}
 
 	pl, err := spotify.GetPlaylists()
