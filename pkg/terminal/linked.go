@@ -38,7 +38,6 @@ func linkedMenu() (err error) {
 		"Aggiorna le canzoni nelle playlist collegate",
 	}
 
-	var userID string
 	for {
 		fmt.Println("--------------------------------------------------------")
 		fmt.Println("Playlist Manager v0.2.1\nSviluppato da " + termlink.ColorLink("Matteo Lombardi", "https://github.com/matteolomba", "italic yellow"))

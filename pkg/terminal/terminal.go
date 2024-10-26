@@ -13,6 +13,8 @@ import (
 	log "playlist-manager/pkg/logger"
 )
 
+var userID string
+
 func Display() (err error) {
 	options := []string{
 		"Visualizza le playlist del tuo account",
@@ -21,8 +23,6 @@ func Display() (err error) {
 		"Carica una playlist (Restore)",
 		"Visualizza e gestisci le playlist collegate",
 	}
-
-	var userID string
 
 	err = spotify.Auth()
 	if err != nil {
