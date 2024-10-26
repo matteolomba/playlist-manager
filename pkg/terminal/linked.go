@@ -233,20 +233,21 @@ func addLinkedPlaylist() (err error) {
 		}
 	}
 
+	//Generate the random ID
+	lp.ID = utils.RandomString(10)
+
 	jsonData, err := json.Marshal(lp)
 	if err != nil {
 		return err
 	}
 
-	id := utils.RandomString(10)
-
 	//Write file
-	err = os.WriteFile("data/playlists/"+id+".json", jsonData, 0644)
+	err = os.WriteFile("data/playlists/"+lp.ID+".json", jsonData, 0644)
 	if err != nil {
 		return err
 	}
 
-	fmt.Println("Playlist " + lp.Name + " salvata come data/playlists/" + id + ".json")
+	fmt.Println("Playlist " + lp.Name + " salvata come data/playlists/" + lp.ID + ".json")
 	return nil
 }
 
