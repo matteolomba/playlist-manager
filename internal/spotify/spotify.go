@@ -46,9 +46,27 @@ func IsAuthenticated() bool {
 
 // Init initializes the Spotify API. It needs to be called before any other function in this package
 func Init() {
+	//Check and create the required dir
+	//Backup dir
+	if _, err := os.Stat("data/backup"); os.IsNotExist(err) {
+		os.MkdirAll("data/backup", 0644) // Create dir if not exists
+		log.Info("Cartella data/backup creata")
+	}
+	//Auth dir
+	if _, err := os.Stat("data/auth"); os.IsNotExist(err) {
+		os.MkdirAll("data/auth", 0644) // Create dir if not exists
+		log.Info("Cartella data/auth creata")
+	}
+	//Playlists dir
+	if _, err := os.Stat("data/playlists"); os.IsNotExist(err) {
+		os.MkdirAll("data/playlists", 0644) // Create dir if not exists
+		log.Info("Cartella data/playlists creata")
+	}
+
+	//Get or create auth vars
 	err := getAuthVars()
 	if err != nil {
-		log.Fatal("Inizializzazione Spotify: recupero delle variabili per l'autenticazione", "error", err)
+		log.Fatal("Inizializzazione Spotify: errore nel recupero delle variabili per l'autenticazione", "error", err)
 	}
 
 	//Gin router setup
@@ -72,23 +90,6 @@ func Init() {
 
 	// Auth endpoint
 	r.GET("/api/auth", authEndpoint)
-
-	//Check and create the required dir
-	//Backup dir
-	if _, err := os.Stat("data/backup"); os.IsNotExist(err) {
-		os.MkdirAll("data/backup", 0644) // Create dir if not exists
-		log.Info("Cartella data/backup creata")
-	}
-	//Auth dir
-	if _, err := os.Stat("data/auth"); os.IsNotExist(err) {
-		os.MkdirAll("data/auth", 0644) // Create dir if not exists
-		log.Info("Cartella data/auth creata")
-	}
-	//Playlists dir
-	if _, err := os.Stat("data/playlists"); os.IsNotExist(err) {
-		os.MkdirAll("data/playlists", 0644) // Create dir if not exists
-		log.Info("Cartella data/playlists creata")
-	}
 }
 
 // -> Auth vars functions
@@ -187,7 +188,7 @@ func Auth() (err error) {
 	if err == nil {
 		if token.Valid() {
 			//Token expired
-			log.Info("Token per l'autenticazione scaduto. Verrà riefettuata l'autenticazione.")
+			log.Info("Token per l'autenticazione scaduto. Verrà rieffettuata l'autenticazione.")
 			token, err = authenticator.RefreshToken(context, token)
 			if err != nil {
 				log.Error("Errore nel refresh del token per l'autenticazione: " + err.Error())
@@ -262,7 +263,7 @@ func readAuthToken() (token *oauth2.Token, err error) {
 	token = &oauth2.Token{}
 	data, err := os.ReadFile("data/auth/token.json")
 	if errors.Is(err, os.ErrNotExist) {
-		log.Warn("File data/auth/token.json non esistente. Verrà riefettuata l'autenticazione.")
+		log.Warn("File data/auth/token.json non esistente. Verrà rieffettuata l'autenticazione.")
 		return
 	} else if err != nil {
 		return
