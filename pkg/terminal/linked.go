@@ -356,7 +356,19 @@ func updateLinkedPlaylists() (err error) {
 	fmt.Println("--------------------------------------------------")
 
 	for _, pl := range playlists {
-		fmt.Println("Playlist: " + pl.Name)
+		fmt.Println("Playlist: " + pl.Name + " (" + pl.ID + ")")
+
+		//Print linked playlist info (origin + destination)
+		plString := pl.Origin[0].Name
+		for i := 1; i < len(pl.Origin); i++ {
+			plString += " + " + pl.Origin[i].Name
+		}
+		plString += " = " + pl.Destination[0].Name
+		for i := 1; i < len(pl.Destination); i++ {
+			plString += " + " + pl.Destination[i].Name
+		}
+		fmt.Println(plString)
+		fmt.Println("--------------------------------------------------")
 
 		//-> Get tracks from origin playlists
 		var originTracks []spotifyapi.ID
@@ -377,7 +389,7 @@ func updateLinkedPlaylists() (err error) {
 				return err
 			}
 
-			//Remove tracks that are already in the destination playlist
+			//Get tracks that are only in the origin playlists (is the track in the destination playlist?)
 			var tracksToAdd []spotifyapi.ID
 			for _, t := range originTracks {
 				found := false
@@ -395,10 +407,43 @@ func updateLinkedPlaylists() (err error) {
 			//Add songs to destination playlists
 			if len(tracksToAdd) == 0 {
 				fmt.Println("Nessuna canzone da aggiungere a " + p.Name)
-				continue
 			} else {
-				fmt.Printf("Aggiungo %d canzoni a %s\n", len(tracksToAdd), p.Name)
+				if len(tracksToAdd) == 1 {
+					fmt.Println("Aggiungo 1 canzone a " + p.Name)
+				} else {
+					fmt.Printf("Aggiungo %d canzoni a %s\n", len(tracksToAdd), p.Name)
+				}
 				err = spotify.AddTracksToPlaylist(tracksToAdd, spotifyapi.ID(p.ID))
+				if err != nil {
+					return err
+				}
+			}
+
+			//Get tracks that are only in the destination playlists (is the track in the origin playlist?)
+			var tracksToRemove []spotifyapi.ID
+			for _, dt := range destTracks {
+				found := false
+				for _, t := range originTracks {
+					if dt == t {
+						found = true
+						break
+					}
+				}
+				if !found {
+					tracksToRemove = append(tracksToRemove, dt)
+				}
+			}
+
+			//Remove songs from destination playlists
+			if len(tracksToRemove) == 0 {
+				fmt.Println("Nessuna canzone da rimuovere da " + p.Name)
+			} else {
+				if len(tracksToRemove) == 1 {
+					fmt.Println("Rimuovo 1 canzone da " + p.Name)
+				} else {
+					fmt.Printf("Rimuovo %d canzoni da %s\n", len(tracksToRemove), p.Name)
+				}
+				err = spotify.RemoveTracksFromPlaylist(tracksToRemove, spotifyapi.ID(p.ID))
 				if err != nil {
 					return err
 				}

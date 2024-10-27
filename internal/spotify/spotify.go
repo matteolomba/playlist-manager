@@ -390,3 +390,16 @@ func AddTracksToPlaylist(trackList []api.ID, playlistID api.ID) (err error) {
 	}
 	return nil
 }
+
+/*
+RemoveTracksFromPlaylist removes the tracks (given the ID) from trackList from the playlist given its ID (playlistID)
+Returns an error, if present
+*/
+func RemoveTracksFromPlaylist(trackList []api.ID, playlistID api.ID) (err error) {
+	_, err = client.RemoveTracksFromPlaylist(context, playlistID, trackList...)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
