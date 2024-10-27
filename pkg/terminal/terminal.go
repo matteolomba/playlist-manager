@@ -31,6 +31,9 @@ func Display() (err error) {
 		return err
 	}
 
+	//Clear terminal after auth
+	utils.ClearTerminal()
+
 	for {
 		fmt.Println("--------------------------------------------------------")
 		fmt.Println("Playlist Manager " + VERSION + "\nSviluppato da " + termlink.ColorLink("Matteo Lombardi", "https://github.com/matteolomba", "italic yellow"))
