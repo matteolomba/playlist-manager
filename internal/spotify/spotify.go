@@ -239,7 +239,7 @@ func authEndpoint(ctx *gin.Context) {
 	token, err := authenticator.Token(context, authVars.State, ctx.Request)
 	if err != nil {
 		log.Error("Ottenimento del token da Spotify: ", "error", err)
-		ctx.String(http.StatusNotFound, "Ottenimento del token da Spotify: "+err.Error()) //TODO: Farlo funzionare
+		ctx.String(http.StatusNotFound, "Ottenimento del token da Spotify: "+err.Error())
 		return
 	}
 
