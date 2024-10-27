@@ -41,7 +41,7 @@ func linkedMenu() (err error) {
 
 	for {
 		fmt.Println("--------------------------------------------------------")
-		fmt.Println("Playlist Manager v0.2.1\nSviluppato da " + termlink.ColorLink("Matteo Lombardi", "https://github.com/matteolomba", "italic yellow"))
+		fmt.Println("Playlist Manager " + VERSION + "\nSviluppato da " + termlink.ColorLink("Matteo Lombardi", "https://github.com/matteolomba", "italic yellow"))
 		fmt.Println("--------------------------------------------------------")
 		displayAuthStatus(&userID)
 		fmt.Println("--------------------------------------------------------")

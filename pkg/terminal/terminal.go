@@ -15,6 +15,8 @@ import (
 
 var userID string
 
+const VERSION = "0.3.0"
+
 func Display() (err error) {
 	options := []string{
 		"Visualizza le playlist del tuo account",
@@ -31,7 +33,7 @@ func Display() (err error) {
 
 	for {
 		fmt.Println("--------------------------------------------------------")
-		fmt.Println("Playlist Manager v0.2.1\nSviluppato da " + termlink.ColorLink("Matteo Lombardi", "https://github.com/matteolomba", "italic yellow"))
+		fmt.Println("Playlist Manager " + VERSION + "\nSviluppato da " + termlink.ColorLink("Matteo Lombardi", "https://github.com/matteolomba", "italic yellow"))
 		fmt.Println("--------------------------------------------------------")
 		displayAuthStatus(&userID)
 		fmt.Println("--------------------------------------------------------")
