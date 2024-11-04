@@ -8,20 +8,20 @@ import (
 	"playlist-manager/pkg/utils"
 
 	"github.com/savioxavier/termlink"
-	spotifyapi "github.com/zmb3/spotify/v2"
 
 	log "playlist-manager/pkg/logger"
 )
 
 var userID string
 
-const VERSION = "0.3.1"
+const VERSION = "0.3.2"
 
 func Display() (err error) {
 	options := []string{
 		"Visualizza le playlist del tuo account",
 		"Visualizza i brani di una playlist del tuo account",
 		"Salva una playlist (Backup)",
+		"Salva tutte le playlist (Backup)",
 		"Carica una playlist (Restore)",
 		"Visualizza e gestisci le playlist collegate",
 	}
@@ -38,7 +38,7 @@ func Display() (err error) {
 		fmt.Println("--------------------------------------------------------")
 		fmt.Println("Playlist Manager " + VERSION + "\nSviluppato da " + termlink.ColorLink("Matteo Lombardi", "https://github.com/matteolomba", "italic yellow"))
 		fmt.Println("--------------------------------------------------------")
-		displayAuthStatus(&userID)
+		displayAuthStatus()
 		fmt.Println("--------------------------------------------------------")
 		fmt.Println("-> Menù Principale <-")
 		fmt.Println("--------------------------------------------------------")
@@ -135,32 +135,8 @@ func Display() (err error) {
 				break
 			}
 
-			//Get tracks and convert to JSON
-			tracks, err := spotify.GetTracks(pl[sel-1].ID)
-			if err != nil {
-				return err
-			}
-
-			var tracksIDS []spotifyapi.ID
-			for _, t := range tracks {
-				if t.Track.Track.ID == "" {
-					log.Warn("Brano non disponibile, potrebbe essere un podcast o un brano non disponibile su Spotify")
-				} else {
-					tracksIDS = append(tracksIDS, t.Track.Track.ID)
-				}
-			}
-			playlist := spotify.Playlist{
-				ID:        pl[sel-1].ID,
-				Name:      pl[sel-1].Name,
-				TracksIDs: tracksIDS,
-			}
-			jsonData, err := json.Marshal(playlist)
-			if err != nil {
-				return err
-			}
-
-			//Write file
-			err = os.WriteFile("data/backup/"+string(pl[sel-1].ID)+".json", jsonData, 0644)
+			//Save playlist
+			err = spotify.SavePlaylistAsJSON(pl[sel-1])
 			if err != nil {
 				return err
 			}
@@ -169,7 +145,27 @@ func Display() (err error) {
 			fmt.Printf("\nPremi invio per tornare al menu...")
 			fmt.Scanf("\n\n")
 
-		case 4: // Restore playlist from JSON file
+		case 4: // Backup all personal playlists to JSON files
+			//Get playlists
+			pl, err := spotify.GetPlaylists()
+			if err != nil {
+				return err
+			}
+			for _, p := range pl {
+				//Process only personal playlists
+				if p.Owner.ID == userID {
+					//Save playlist
+					err = spotify.SavePlaylistAsJSON(p)
+					if err != nil {
+						return err
+					}
+					fmt.Println("Playlist '" + p.Name + "' salvata in data/backup/" + string(p.ID) + ".json")
+				}
+			}
+			fmt.Printf("\nPremi invio per tornare al menu...")
+			fmt.Scanf("\n\n")
+
+		case 5: // Restore playlist from JSON file
 
 			//Get files
 			files, err := os.ReadDir("data/backup")
@@ -245,7 +241,7 @@ func Display() (err error) {
 			}
 
 			//Restore playlist
-			err = spotify.AddTracksToPlaylist(playlist.TracksIDs, pl[sel-1].ID)
+			err = spotify.AddTracksToPlaylist(playlist.TrackIDs, pl[sel-1].ID)
 			if err != nil {
 				return err
 			}
@@ -254,7 +250,7 @@ func Display() (err error) {
 			fmt.Printf("\nPremi invio per tornare al menu...")
 			fmt.Scanf("\n\n")
 
-		case 5: // Manage linked playlists
+		case 6: // Manage linked playlists
 			utils.ClearTerminal()
 			err := linkedMenu()
 			if err != nil {
@@ -268,14 +264,15 @@ func Display() (err error) {
 	}
 }
 
-func displayAuthStatus(userID *string) {
+func displayAuthStatus() {
 	fmt.Print("Autenticato: ")
 	if spotify.IsAuthenticated() {
 		fmt.Println("✅")
 
 		//Display user ID
-		if *userID == "" {
-			userID, err := spotify.GetUserID()
+		if userID == "" {
+			var err error
+			userID, err = spotify.GetUserID()
 			if err != nil {
 				log.Error("Errore nel recupero dell'ID dell'utente", "error", err)
 			} else {

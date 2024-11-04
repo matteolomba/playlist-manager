@@ -34,9 +34,9 @@ var (
 
 // Playlist struct used to store the playlist data in json files to backup and restore them
 type Playlist struct {
-	ID        api.ID   `json:"id"`
-	Name      string   `json:"name"`
-	TracksIDs []api.ID `json:"tracks"`
+	ID       api.ID   `json:"id"`
+	Name     string   `json:"name"`
+	TrackIDs []api.ID `json:"tracks"`
 }
 
 // IsAuthenticated returns true if the user is authenticated or false otherwise
@@ -398,6 +398,40 @@ Returns an error, if present
 */
 func RemoveTracksFromPlaylist(trackList []api.ID, playlistID api.ID) (err error) {
 	_, err = client.RemoveTracksFromPlaylist(context, playlistID, trackList...)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func SavePlaylistAsJSON(p api.SimplePlaylist) error {
+	//Get tracks and convert to JSON
+	tracks, err := GetTracks(p.ID)
+	if err != nil {
+		return err
+	}
+
+	var trackIDS []api.ID
+	for _, t := range tracks {
+		if t.Track.Track.ID == "" {
+			log.Warn("Brano non disponibile, potrebbe essere un podcast o un brano non disponibile su Spotify")
+		} else {
+			trackIDS = append(trackIDS, t.Track.Track.ID)
+		}
+	}
+	playlist := Playlist{
+		ID:       p.ID,
+		Name:     p.Name,
+		TrackIDs: trackIDS,
+	}
+	jsonData, err := json.Marshal(playlist)
+	if err != nil {
+		return err
+	}
+
+	//Write file
+	err = os.WriteFile("data/backup/"+string(p.ID)+".json", jsonData, 0644)
 	if err != nil {
 		return err
 	}

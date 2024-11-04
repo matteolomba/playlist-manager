@@ -43,7 +43,7 @@ func linkedMenu() (err error) {
 		fmt.Println("--------------------------------------------------------")
 		fmt.Println("Playlist Manager " + VERSION + "\nSviluppato da " + termlink.ColorLink("Matteo Lombardi", "https://github.com/matteolomba", "italic yellow"))
 		fmt.Println("--------------------------------------------------------")
-		displayAuthStatus(&userID)
+		displayAuthStatus()
 		fmt.Println("--------------------------------------------------------")
 		fmt.Println("-> Menù Playlist Collegate <-")
 		fmt.Println("--------------------------------------------------------")
