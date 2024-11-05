@@ -1,6 +1,6 @@
 # playlist-manager
 
-Applicazione da terminale per gestire delle playlist su Spotify
+Applicazione da terminale per gestire delle playlist su [Spotify](https://spotify.com)
 
 ⌨️ Codice scritto in inglese, prima o poi metterò la documentazione e le stringhe del programma anche in inglese
 <br> 🇬🇧 The code is already written in English, someday I will put the documentation and program strings in English as well
@@ -24,4 +24,4 @@ Una volta ottenute, vanno inserite nel file `.env` nella root del progetto/esegu
 
 ## Crediti
 
-- [zmb3's spotify wrapper](https://github.com/zmb3/spotify/) - Go wrapper used to interact with Spotify's Web API
+- [zmb3's spotify wrapper](https://github.com/zmb3/spotify/) - Go wrapper used to interact with [Spotify's Web API](https://developer.spotify.com/documentation/web-api)
