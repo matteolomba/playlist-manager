@@ -14,7 +14,7 @@ import (
 
 var userID string
 
-const VERSION = "0.3.3"
+const VERSION = "0.3.4"
 
 func Display() (err error) {
 	options := []string{
