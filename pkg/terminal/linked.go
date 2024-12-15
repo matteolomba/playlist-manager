@@ -351,11 +351,11 @@ func updateLinkedPlaylists() (err error) {
 		}
 	}
 
-	fmt.Println("--------------------------------------------------")
-	fmt.Println("-> Aggiorno le canzoni nelle playlist collegate <-")
-	fmt.Println("--------------------------------------------------")
+	fmt.Println("----------------------------------------------------------------------")
+	fmt.Println("->          Aggiorno le canzoni nelle playlist collegate            <-")
 
 	for _, pl := range playlists {
+		fmt.Println("----------------------------------------------------------------------")
 		fmt.Println("Playlist: " + pl.Name + " (" + pl.ID + ")")
 
 		//Print linked playlist info (origin + destination)
@@ -368,7 +368,7 @@ func updateLinkedPlaylists() (err error) {
 			plString += " + " + pl.Destination[i].Name
 		}
 		fmt.Println(plString)
-		fmt.Println("--------------------------------------------------")
+		fmt.Println("->                                                                  <-")
 
 		//-> Get tracks from origin playlists
 		var originTracks []spotifyapi.ID
