@@ -263,11 +263,11 @@ func removeLinkedPlaylist() (err error) {
 	if len(files) == 0 {
 		fmt.Println("Nessuna playlist collegata, aggiungine una!")
 	} else {
+		fmt.Println("--------------------------------------------------")
+		fmt.Println("-> Seleziona la playlist collegata da rimuovere <-")
+		fmt.Println("--------------------------------------------------")
+		fmt.Println("0. Annulla e torna indietro")
 		for i, f := range files {
-			fmt.Println("--------------------------------------------------")
-			fmt.Println("-> Seleziona la playlist collegata da rimuovere <-")
-			fmt.Println("--------------------------------------------------")
-			fmt.Println("0. Annulla e torna indietro")
 			//Read file
 			tempData, err := os.ReadFile("data/playlists/" + f.Name())
 			if err != nil {
