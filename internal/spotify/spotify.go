@@ -182,7 +182,7 @@ Auth authenticates the user and saves the token in the data/auth/token.json file
 Returns an error, if present
 */
 func Auth() (err error) {
-	authenticator = apiauth.New(apiauth.WithRedirectURL("http://localhost/api/auth"), apiauth.WithScopes(apiauth.ScopeUserReadPrivate, apiauth.ScopePlaylistReadPrivate, apiauth.ScopePlaylistReadCollaborative, apiauth.ScopePlaylistModifyPrivate))
+	authenticator = apiauth.New(apiauth.WithRedirectURL("http://localhost/api/auth"), apiauth.WithScopes(apiauth.ScopeUserReadPrivate, apiauth.ScopePlaylistReadPrivate, apiauth.ScopePlaylistReadCollaborative, apiauth.ScopePlaylistModifyPrivate, apiauth.ScopePlaylistModifyPublic))
 
 	token, err := readAuthToken()
 	if err == nil {
