@@ -16,7 +16,7 @@ import (
 
 var userID string
 
-const VERSION = "0.3.5"
+const VERSION = "0.3.6"
 
 func Display() (err error) {
 	log.Info("Avvio di Playlist Manager", "version", VERSION)
@@ -40,19 +40,20 @@ func Display() (err error) {
 	utils.ClearTerminal()
 
 	for {
-		fmt.Println("--------------------------------------------------------")
-		fmt.Println("Playlist Manager " + VERSION + "\nSviluppato da " + termlink.ColorLink("Matteo Lombardi", "https://github.com/matteolomba", "italic yellow"))
-		fmt.Println("--------------------------------------------------------")
+		fmt.Println("========================================================")
+		fmt.Println("🎧 Playlist Manager " + VERSION + " 🎧\n✨ Sviluppato da " + termlink.ColorLink("Matteo Lombardi", "https://github.com/matteolomba", "italic yellow") + " ✨")
+		fmt.Println("========================================================")
 		displayAuthStatus()
-		fmt.Println("--------------------------------------------------------")
-		fmt.Println("-> Menù Principale <-")
-		fmt.Println("--------------------------------------------------------")
-		fmt.Printf("0. Esci\n")
+		fmt.Println("========================================================")
+		fmt.Println("🏠 -> Menù Principale <- 🏠")
+		fmt.Println("========================================================")
+		fmt.Printf("🚪 0. Esci\n")
+		optionEmojis := []string{"📋", "🎵", "💾", "📁", "🔄", "🔗"}
 		for i, o := range options {
-			fmt.Printf("%d. %s\n", i+1, o)
+			fmt.Printf("%s %d. %s\n", optionEmojis[i], i+1, o)
 		}
-		fmt.Println("--------------------------------------------------------")
-		fmt.Print("Cosa vuoi fare? ")
+		fmt.Println("========================================================")
+		fmt.Print("❓ Cosa vuoi fare? ")
 		var sel int
 		_, err := fmt.Scan(&sel)
 		if err != nil {
@@ -64,10 +65,11 @@ func Display() (err error) {
 		switch sel {
 		case 0:
 			log.Info("L'utente ha scelto di uscire dall'applicazione", "userID", userID)
-			fmt.Println("Esco...")
+			fmt.Println("👋 Ciao! Esco dall'applicazione...")
 			return nil
 
 		case 1: // Get playlists
+			utils.ClearTerminal()
 			log.Info("L'utente ha richiesto la visualizzazione delle playlist", "userID", userID)
 			pl, err := spotify.GetPlaylists()
 			if err != nil {
@@ -75,37 +77,48 @@ func Display() (err error) {
 				return err
 			}
 			log.Info("Playlist recuperate con successo", "count", len(pl), "userID", userID)
+			fmt.Println("\n🎼 Le tue playlist:")
+			fmt.Println("==================")
 			for i, p := range pl {
-				fmt.Printf("%d. %s - %s\n", i+1, p.Name, p.ID)
+				fmt.Printf("🎵 %d. %s - %s\n", i+1, p.Name, p.ID)
 			}
-			fmt.Printf("\nPremi invio per tornare al menu...")
+			fmt.Printf("\n⏎ Premi invio per tornare al menu...")
 			fmt.Scanf("\n\n")
 
 		case 2: // Get tracks from a playlist
+			utils.ClearTerminal()
 			log.Info("L'utente ha richiesto la visualizzazione dei brani di una playlist", "userID", userID)
 			pl, err := spotify.GetPlaylists()
 			if err != nil {
 				log.Error("Errore nel recupero delle playlist per la visualizzazione dei brani", "error", err, "userID", userID)
 				return err
 			}
+			fmt.Println("\n🎼 Seleziona una playlist:")
+			fmt.Println("=========================")
 			for i, p := range pl {
-				fmt.Printf("%d. %s - %s\n", i+1, p.Name, p.ID)
+				fmt.Printf("🎵 %d. %s - %s\n", i+1, p.Name, p.ID)
 			}
-			fmt.Print("\nInserisci il numero della playlist di cui vuoi visualizzare i brani: ")
+			fmt.Println("🔙 0. Annulla")
+			fmt.Print("\n🔍 Inserisci il numero della playlist di cui vuoi visualizzare i brani: ")
 			var sel int
 			_, err = fmt.Scan(&sel)
 			if err != nil {
 				log.Error("Errore nella lettura della selezione playlist per brani", "error", err, "userID", userID)
 				return err
 			}
+			if sel == 0 {
+				log.Info("L'utente ha annullato la visualizzazione dei brani", "userID", userID)
+				break
+			}
 			if sel < 1 || sel > len(pl) {
 				log.Warn("Selezione non valida per visualizzare i brani", "selection", sel, "max", len(pl), "userID", userID)
-				fmt.Println("Selezione non valida")
-				fmt.Printf("\nPremi invio per tornare al menu...")
+				fmt.Println("❌ Selezione non valida")
+				fmt.Printf("\n⏎ Premi invio per tornare al menu...")
 				fmt.Scanf("\n\n")
 				break
 			}
 			selectedPlaylist := pl[sel-1]
+			utils.ClearTerminal()
 			log.Info("L'utente ha selezionato una playlist per visualizzazione brani", "playlistName", selectedPlaylist.Name, "playlistID", selectedPlaylist.ID, "userID", userID)
 			tracks, err := spotify.GetTracks(selectedPlaylist.ID)
 			if err != nil {
@@ -113,11 +126,14 @@ func Display() (err error) {
 				return err
 			}
 			log.Info("Brani della playlist recuperati con successo", "trackCount", len(tracks), "playlistName", selectedPlaylist.Name, "userID", userID)
+			fmt.Printf("\n🎵 Brani della playlist '%s':\n", selectedPlaylist.Name)
+			fmt.Println("=======================================")
 			for i, t := range tracks {
 				if t.Track.Track.ID == "" {
+					fmt.Printf("⚠️ %d. Brano non disponibile (potrebbe essere un podcast)\n", i+1)
 					log.Warn("Brano non disponibile, potrebbe essere un podcast o un brano non disponibile su Spotify")
 				} else {
-					text := fmt.Sprintf("%d. %s di ", i+1, t.Track.Track.Name)
+					text := fmt.Sprintf("🎶 %d. %s di ", i+1, t.Track.Track.Name)
 					for _, a := range t.Track.Track.Artists {
 						text += a.Name + ", "
 					}
@@ -125,10 +141,11 @@ func Display() (err error) {
 					fmt.Println(text)
 				}
 			}
-			fmt.Printf("\nPremi invio per tornare al menu...")
+			fmt.Printf("\n⏎ Premi invio per tornare al menu...")
 			fmt.Scanf("\n\n")
 
 		case 3: // Save playlist (Backup) to JSON file
+			utils.ClearTerminal()
 			log.Info("L'utente ha richiesto il backup di una singola playlist", "userID", userID)
 			//Get playlists
 			pl, err := spotify.GetPlaylists()
@@ -136,27 +153,35 @@ func Display() (err error) {
 				log.Error("Errore nel recupero delle playlist per backup singolo", "error", err, "userID", userID)
 				return err
 			}
+			fmt.Println("\n💾 Seleziona la playlist da salvare:")
+			fmt.Println("====================================")
 			for i, p := range pl {
-				fmt.Printf("%d. %s - %s\n", i+1, p.Name, p.ID)
+				fmt.Printf("🎵 %d. %s - %s\n", i+1, p.Name, p.ID)
 			}
+			fmt.Println("🔙 0. Annulla")
 
 			//Select playlist
-			fmt.Print("\nInserisci il numero della playlist di cui vuoi fare il backup: ")
+			fmt.Print("\n💾 Inserisci il numero della playlist di cui vuoi fare il backup: ")
 			var sel int
 			_, err = fmt.Scan(&sel)
 			if err != nil {
 				log.Error("Errore nella lettura della playlist selezionata per backup", "error", err, "userID", userID)
 				return err
 			}
+			if sel == 0 {
+				log.Info("L'utente ha annullato il backup della playlist", "userID", userID)
+				break
+			}
 			if sel < 1 || sel > len(pl) {
 				log.Warn("Selezione non valida per il backup della playlist", "selection", sel, "max", len(pl), "userID", userID)
-				fmt.Println("Selezione non valida")
-				fmt.Printf("\nPremi invio per tornare al menu...")
+				fmt.Println("❌ Selezione non valida")
+				fmt.Printf("\n⏎ Premi invio per tornare al menu...")
 				fmt.Scanf("\n\n")
 				break
 			}
 
 			selectedPlaylist := pl[sel-1]
+			utils.ClearTerminal()
 			log.Info("Inizio backup playlist singola", "playlistName", selectedPlaylist.Name, "playlistID", selectedPlaylist.ID, "userID", userID)
 			//Save playlist
 			backupDir, err := savePlaylistAsJSON(selectedPlaylist, userID)
@@ -165,11 +190,12 @@ func Display() (err error) {
 				return err
 			}
 			log.Info("Backup playlist completato con successo", "playlistName", selectedPlaylist.Name, "playlistID", selectedPlaylist.ID, "userID", userID, "backupDir", backupDir)
-			fmt.Println("Playlist salvata in:", backupDir)
-			fmt.Printf("Premi invio per tornare al menu...")
+			fmt.Println("✅ Playlist salvata in:", backupDir)
+			fmt.Printf("\n⏎ Premi invio per tornare al menu...")
 			fmt.Scanf("\n\n")
 
 		case 4: // Backup all personal playlists to JSON files
+			utils.ClearTerminal()
 			log.Info("L'utente ha richiesto il backup di tutte le playlist personali", "userID", userID)
 			//Get playlists
 			pl, err := spotify.GetPlaylists()
@@ -187,7 +213,8 @@ func Display() (err error) {
 			log.Info("Playlist personali da salvare ottenute", "count", personalPlaylistsCount, "userID", userID)
 
 			today := time.Now().Format("2006-01-02")
-			fmt.Printf("🗂️ Verranno salvate %d playlist personali in %s\n\n", personalPlaylistsCount, "data/backup/"+userID+"/"+today+"/")
+			fmt.Printf("💾 Verranno salvate %d playlist personali in:\n📂 %s\n\n", personalPlaylistsCount, "data/backup/"+userID+"/"+today+"/")
+			fmt.Println("⏳ Avvio backup...")
 			savedCount := 0
 			for _, p := range pl {
 				//Process only personal playlists
@@ -204,18 +231,20 @@ func Display() (err error) {
 				}
 			}
 			log.Info("Backup multiplo completato", "totalSaved", savedCount, "userID", userID)
-			fmt.Printf("Premi invio per tornare al menu...")
+			fmt.Printf("✅ Backup completato! Salvate %d playlist personali.\n\n⏎ Premi invio per tornare al menu...", savedCount)
 			fmt.Scanf("\n\n")
 
 		case 5: // Restore playlist from JSON file
+			utils.ClearTerminal()
 			log.Info("L'utente ha richiesto il ripristino di una playlist", "userID", userID)
 
 			// Prima scelta: playlist proprie o di altri
-			fmt.Println("Che playlist vuoi ripristinare?")
-			fmt.Println("1. Una delle tue personali")
-			fmt.Println("2. Una di un altro utente")
-			fmt.Println("0. Torna al menu")
-			fmt.Print("Scelta: ")
+			fmt.Println("\n🔄 Che playlist vuoi ripristinare?")
+			fmt.Println("=====================================")
+			fmt.Println("👤 1. Una delle mie personali")
+			fmt.Println("👥 2. Una di un altro utente")
+			fmt.Println("🔙 0. Torna al menu")
+			fmt.Print("\n❓ Scelta: ")
 
 			var ownerChoice int
 			_, err := fmt.Scan(&ownerChoice)
@@ -235,18 +264,20 @@ func Display() (err error) {
 			switch ownerChoice {
 			case 1:
 				// Playlist personali
+				utils.ClearTerminal()
 				backupDir = "data/backup/" + userID
 				isPersonal = true
 				log.Info("L'utente ha scelto di ripristinare una playlist personale", "userID", userID)
 			case 2:
 				// Playlist di altri (nella cartella altre dell'utente)
+				utils.ClearTerminal()
 				backupDir = "data/backup/" + userID + "/altre"
 				isPersonal = false
 				log.Info("L'utente ha scelto di ripristinare una playlist di un altro utente", "userID", userID, "backupDir", backupDir)
 			default:
 				log.Warn("Scelta del proprietario non valida", "choice", ownerChoice, "userID", userID)
-				fmt.Println("Scelta non valida")
-				fmt.Printf("\nPremi invio per tornare al menu...")
+				fmt.Println("❌ Scelta non valida")
+				fmt.Printf("\n⏎ Premi invio per tornare al menu...")
 				fmt.Scanf("\n\n")
 				continue // Torna al menu principale invece di break
 			}
@@ -255,11 +286,11 @@ func Display() (err error) {
 			if _, err := os.Stat(backupDir); os.IsNotExist(err) {
 				log.Warn("Nessun backup trovato", "userID", userID, "backupDir", backupDir, "isPersonal", isPersonal)
 				if isPersonal {
-					fmt.Println("Nessun backup di tue playlist trovato")
+					fmt.Println("❌ Nessun backup di tue playlist trovato")
 				} else {
-					fmt.Println("Nessun backup di playlist di altri trovato")
+					fmt.Println("❌ Nessun backup di playlist di altri trovato")
 				}
-				fmt.Printf("\nPremi invio per tornare al menu...")
+				fmt.Printf("\n⏎ Premi invio per tornare al menu...")
 				fmt.Scanf("\n\n")
 				break
 			}
@@ -284,7 +315,8 @@ func Display() (err error) {
 			}
 
 			log.Info("Cartelle di backup trovate", "count", len(dateDirs), "userID", userID)
-			fmt.Println("Seleziona da quale data ripristinare:")
+			fmt.Println("\n📅 Seleziona da quale data ripristinare:")
+			fmt.Println("=====================================")
 			validDateDirs := []os.DirEntry{}
 			dateIndex := 1
 			for _, d := range dateDirs {
@@ -293,23 +325,23 @@ func Display() (err error) {
 					if isPersonal && d.Name() == "altre" {
 						continue
 					}
-					fmt.Printf("%d. %s\n", dateIndex, d.Name())
+					fmt.Printf("📆 %d. %s\n", dateIndex, d.Name())
 					validDateDirs = append(validDateDirs, d)
 					dateIndex++
 				}
 			}
-			fmt.Println("0. Torna al menu")
+			fmt.Println("🔙 0. Torna al menu")
 
 			if len(validDateDirs) == 0 {
 				log.Warn("Nessuna cartella di backup valida trovata", "userID", userID)
-				fmt.Println("Nessuna cartella di backup valida trovata.")
-				fmt.Printf("\nPremi invio per tornare al menu...")
+				fmt.Println("❌ Nessuna cartella di backup valida trovata.")
+				fmt.Printf("\n⏎ Premi invio per tornare al menu...")
 				fmt.Scanf("\n\n")
 				break
 			}
 
 			//Select date
-			fmt.Print("\nInserisci il numero della data: ")
+			fmt.Print("\n📅 Inserisci il numero della data: ")
 			var dateSelect int
 			_, err = fmt.Scan(&dateSelect)
 			if err != nil {
@@ -322,13 +354,14 @@ func Display() (err error) {
 			}
 			if dateSelect < 1 || dateSelect > len(validDateDirs) {
 				log.Warn("Selezione data non valida per il ripristino", "selection", dateSelect, "max", len(validDateDirs), "userID", userID)
-				fmt.Println("Selezione non valida")
-				fmt.Printf("\nPremi invio per tornare al menu...")
+				fmt.Println("❌ Selezione non valida")
+				fmt.Printf("\n⏎ Premi invio per tornare al menu...")
 				fmt.Scanf("\n\n")
 				break
 			}
 
 			selectedDateDir := validDateDirs[dateSelect-1].Name()
+			utils.ClearTerminal()
 			playlistDir := backupDir + "/" + selectedDateDir
 			log.Info("Data selezionata per il ripristino", "date", selectedDateDir, "userID", userID, "isPersonal", isPersonal)
 
@@ -339,13 +372,14 @@ func Display() (err error) {
 			}
 
 			if len(files) == 0 {
-				fmt.Printf("Nessun backup trovato per la data %s.\n", selectedDateDir)
-				fmt.Printf("\nPremi invio per tornare al menu...")
+				fmt.Printf("❌ Nessun backup trovato per la data %s.\n", selectedDateDir)
+				fmt.Printf("\n⏎ Premi invio per tornare al menu...")
 				fmt.Scanf("\n\n")
 				break
 			}
 
-			fmt.Printf("\nPlaylist salvate il %s:\n", selectedDateDir)
+			fmt.Printf("\n🎵 Playlist salvate il %s:\n", selectedDateDir)
+			fmt.Println("=======================================")
 			validPlaylistFiles := []os.DirEntry{}
 			playlistIndex := 1
 			for _, f := range files {
@@ -365,22 +399,22 @@ func Display() (err error) {
 						continue
 					}
 
-					fmt.Printf("%d. %s (%s)\n", playlistIndex, tempPl.Name, f.Name())
+					fmt.Printf("🎵 %d. %s (%s)\n", playlistIndex, tempPl.Name, f.Name())
 					validPlaylistFiles = append(validPlaylistFiles, f)
 					playlistIndex++
 				}
 			}
 
-			fmt.Println("0. Torna al menu")
+			fmt.Println("🔙 0. Torna al menu")
 			if len(validPlaylistFiles) == 0 {
-				fmt.Printf("Nessun file di backup valido trovato per la data %s.\n", selectedDateDir)
-				fmt.Printf("\nPremi invio per tornare al menu...")
+				fmt.Printf("❌ Nessun file di backup valido trovato per la data %s.\n", selectedDateDir)
+				fmt.Printf("\n⏎ Premi invio per tornare al menu...")
 				fmt.Scanf("\n\n")
 				break
 			}
 
 			//Select playlist file
-			fmt.Print("\nInserisci il numero della playlist da caricare: ")
+			fmt.Print("\n🔄 Inserisci il numero della playlist da caricare: ")
 			var playlistSelect int
 			_, err = fmt.Scan(&playlistSelect)
 			if err != nil {
@@ -390,14 +424,15 @@ func Display() (err error) {
 				break
 			}
 			if playlistSelect < 1 || playlistSelect > len(validPlaylistFiles) {
-				fmt.Println("Selezione non valida")
-				fmt.Printf("\nPremi invio per tornare al menu...")
+				fmt.Println("❌ Selezione non valida")
+				fmt.Printf("\n⏎ Premi invio per tornare al menu...")
 				fmt.Scanf("\n\n")
 				break
 			}
 
 			//Read selected playlist file
 			selectedPlaylistFile := validPlaylistFiles[playlistSelect-1].Name()
+			utils.ClearTerminal()
 			data, err := os.ReadFile(playlistDir + "/" + selectedPlaylistFile)
 			if err != nil {
 				return err
@@ -416,38 +451,45 @@ func Display() (err error) {
 				return err
 			}
 
-			fmt.Printf("\nSeleziona la playlist di destinazione per '%s':\n", playlist.Name)
+			fmt.Printf("\n🎯 Seleziona la playlist di destinazione per '%s':\n", playlist.Name)
+			fmt.Println("======================================================")
 			for i, p := range pl {
-				fmt.Printf("%d. %s - %s\n", i+1, p.Name, p.ID)
+				fmt.Printf("🎵 %d. %s - %s\n", i+1, p.Name, p.ID)
 			}
+			fmt.Println("🔙 0. Annulla")
 
-			fmt.Print("Inserisci il numero della playlist in cui caricare i brani: ")
+			fmt.Print("\n📥 Inserisci il numero della playlist in cui caricare i brani: ")
 			var sel int
 			_, err = fmt.Scan(&sel)
 			if err != nil {
 				return err
 			}
+			if sel == 0 {
+				log.Info("L'utente ha annullato la selezione della playlist di destinazione", "userID", userID)
+				break
+			}
 			if sel < 1 || sel > len(pl) {
-				fmt.Println("Selezione non valida")
-				fmt.Printf("\nPremi invio per tornare al menu...")
+				fmt.Println("❌ Selezione non valida")
+				fmt.Printf("\n⏎ Premi invio per tornare al menu...")
 				fmt.Scanf("\n\n")
 				break
 			}
 
 			//Restore playlist
-			fmt.Printf("Ripristino di '%s' in corso...\n", playlist.Name)
+			utils.ClearTerminal()
+			fmt.Printf("⏳ Ripristino di '%s' in corso...\n", playlist.Name)
 			err = spotify.AddTracksToPlaylist(playlist.TrackIDs, pl[sel-1].ID)
 			if err != nil {
 				return err
 			}
 
-			fmt.Printf("Playlist '%s' caricata con successo in '%s'\n", playlist.Name, pl[sel-1].Name)
-			fmt.Printf("\nPremi invio per tornare al menu...")
+			fmt.Printf("✅ Playlist '%s' caricata con successo in '%s'!\n", playlist.Name, pl[sel-1].Name)
+			fmt.Printf("\n⏎ Premi invio per tornare al menu...")
 			fmt.Scanf("\n\n")
 
 		case 6: // Manage linked playlists
-			log.Info("L'utente ha richiesto la gestione delle playlist collegate", "userID", userID)
 			utils.ClearTerminal()
+			log.Info("L'utente ha richiesto la gestione delle playlist collegate", "userID", userID)
 			err := linkedMenu()
 			if err != nil {
 				log.Error("Errore nella gestione delle playlist collegate", "error", err, "userID", userID)
@@ -456,14 +498,14 @@ func Display() (err error) {
 
 		default:
 			log.Warn("Scelta menu non valida", "selection", sel, "userID", userID)
-			fmt.Println("Scelta non valida o non ancora implementata")
+			fmt.Println("❌ Scelta non valida o non ancora implementata")
 		}
 		utils.ClearTerminal()
 	}
 }
 
 func displayAuthStatus() {
-	fmt.Print("Autenticato: ")
+	fmt.Print("🔐 Autenticato: ")
 	if spotify.IsAuthenticated() {
 		fmt.Println("✅")
 
@@ -475,10 +517,10 @@ func displayAuthStatus() {
 				log.Error("Errore nel recupero dell'ID dell'utente", "error", err)
 			} else {
 				log.Info("UserID recuperato con successo", "userID", userID)
-				fmt.Println("Utente:", userID)
+				fmt.Println("👤 Utente:", userID)
 			}
 		} else {
-			fmt.Println("Utente:", userID)
+			fmt.Println("👤 Utente:", userID)
 		}
 
 	} else {
