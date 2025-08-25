@@ -136,17 +136,34 @@ func showLinkedPlaylists() (err error) {
 				return err
 			}
 
-			//Print playlist info
-			plString := tempPl.Origin[0].Name
-			for i := 1; i < len(tempPl.Origin); i++ {
-				plString += " + " + tempPl.Origin[i].Name
-			}
-			plString += " = " + tempPl.Destination[0].Name
-			for i := 1; i < len(tempPl.Destination); i++ {
-				plString += " + " + tempPl.Destination[i].Name
-			}
+			//Print playlist info in a formatted way
+			fmt.Printf("\n🔗 %d. %s\n", i+1, tempPl.Name)
+			fmt.Printf("   📄 File: %s\n", f.Name())
 
-			fmt.Printf("🔗 %d. %s (%s) -> %s\n", i+1, tempPl.Name, f.Name(), plString)
+			// Print origin playlists
+			fmt.Print("   📥 Origine: ")
+			for j, origin := range tempPl.Origin {
+				if j > 0 {
+					fmt.Print(" ➕ ")
+				}
+				fmt.Printf("\"%s\"", origin.Name)
+			}
+			fmt.Println()
+
+			// Print destination playlists
+			fmt.Print("   🎯 Destinazione: ")
+			for j, dest := range tempPl.Destination {
+				if j > 0 {
+					fmt.Print(" ➕ ")
+				}
+				fmt.Printf("\"%s\"", dest.Name)
+			}
+			fmt.Println()
+
+			// Add separator line between playlists (except for the last one)
+			if i < len(files)-1 {
+				fmt.Println("   ─────────────────────────────────────")
+			}
 		}
 	}
 	return nil
@@ -316,17 +333,29 @@ func removeLinkedPlaylist() (err error) {
 				return err
 			}
 
-			//Print playlist info
-			plString := tempPl.Origin[0].Name
-			for i := 1; i < len(tempPl.Origin); i++ {
-				plString += " + " + tempPl.Origin[i].Name
+			//Print playlist info in a formatted way
+			fmt.Printf("\n🔗 %d. %s\n", i+1, tempPl.Name)
+			fmt.Printf("   📄 File: %s\n", f.Name())
+			
+			// Print origin playlists
+			fmt.Print("   📥 Origine: ")
+			for j, origin := range tempPl.Origin {
+				if j > 0 {
+					fmt.Print(" ➕ ")
+				}
+				fmt.Printf("🎵 %s", origin.Name)
 			}
-			plString += " = " + tempPl.Destination[0].Name
-			for i := 1; i < len(tempPl.Destination); i++ {
-				plString += " + " + tempPl.Destination[i].Name
+			fmt.Println()
+			
+			// Print destination playlists
+			fmt.Print("   📤 Destinazione: ")
+			for j, dest := range tempPl.Destination {
+				if j > 0 {
+					fmt.Print(" ➕ ")
+				}
+				fmt.Printf("🎯 %s", dest.Name)
 			}
-
-			fmt.Printf("🔗 %d. %s (%s) -> %s\n", i+1, tempPl.Name, f.Name(), plString)
+			fmt.Println()
 		}
 
 		fmt.Println("======================================================")
