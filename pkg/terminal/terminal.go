@@ -16,7 +16,7 @@ import (
 
 var userID string
 
-const VERSION = "0.3.6"
+const VERSION = "0.3.7"
 
 func Display() (err error) {
 	log.Info("Avvio di Playlist Manager", "version", VERSION)
@@ -27,6 +27,7 @@ func Display() (err error) {
 		"Salva tutte le playlist (Backup)",
 		"Carica una playlist (Restore)",
 		"Visualizza e gestisci le playlist collegate",
+		"Riautenticati (cancella credenziali e rifai login)",
 	}
 
 	err = spotify.Auth()
@@ -48,7 +49,7 @@ func Display() (err error) {
 		fmt.Println("🏠 -> Menù Principale <- 🏠")
 		fmt.Println("========================================================")
 		fmt.Printf("🚪 0. Esci\n")
-		optionEmojis := []string{"📋", "🎵", "💾", "📁", "🔄", "🔗"}
+		optionEmojis := []string{"📋", "🎵", "💾", "📁", "🔄", "🔗", "🔑"}
 		for i, o := range options {
 			fmt.Printf("%s %d. %s\n", optionEmojis[i], i+1, o)
 		}
@@ -495,6 +496,42 @@ func Display() (err error) {
 				log.Error("Errore nella gestione delle playlist collegate", "error", err, "userID", userID)
 				return err
 			}
+
+		case 7: // Riautentica con Spotify
+			utils.ClearTerminal()
+			log.Info("L'utente ha richiesto la riautenticazione", "userID", userID)
+			fmt.Println("🔑 Riautenticazione in corso...")
+			fmt.Println("===============================")
+
+			// Rimuove le credenziali esistenti
+			authDir := "data/auth"
+			if _, err := os.Stat(authDir); err == nil {
+				log.Info("Rimozione credenziali esistenti", "authDir", authDir)
+				fmt.Println("🗑️ Rimozione credenziali esistenti...")
+				err = os.RemoveAll(authDir)
+				if err != nil {
+					log.Error("Errore nella rimozione delle credenziali", "error", err, "authDir", authDir)
+					fmt.Println("⚠️ Errore nella rimozione delle credenziali:", err)
+					fmt.Println("🔄 Procedo comunque con la riautenticazione...")
+				} else {
+					log.Info("Credenziali rimosse con successo", "authDir", authDir)
+					fmt.Println("✅ Credenziali rimosse con successo")
+				}
+			} else {
+				log.Info("Nessuna credenziale esistente da rimuovere", "authDir", authDir)
+			}
+
+			fmt.Println("🔐 Avvio nuova autenticazione...")
+			err := spotify.Auth()
+			if err != nil {
+				log.Error("Errore durante la riautenticazione", "error", err, "userID", userID)
+				fmt.Println("❌ Errore nella riautenticazione:", err)
+			} else {
+				log.Info("Riautenticazione completata con successo", "userID", userID)
+				fmt.Println("✅ Riautenticazione completata con successo!")
+			}
+			fmt.Printf("\n⏎ Premi invio per tornare al menu...")
+			fmt.Scanf("\n\n")
 
 		default:
 			log.Warn("Scelta menu non valida", "selection", sel, "userID", userID)
