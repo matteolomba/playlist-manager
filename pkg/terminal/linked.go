@@ -143,22 +143,15 @@ func showLinkedPlaylists() (err error) {
 			fmt.Printf("   📄 File: %s\n", f.Name())
 
 			// Print origin playlists
-			fmt.Print("   📥 Origine: ")
-			for j, origin := range tempPl.Origin {
-				if j > 0 {
-					fmt.Print(" ➕ ")
-				}
-				fmt.Printf("\"%s\"", origin.Name)
+			fmt.Println("   📥 Origine:")
+			for _, origin := range tempPl.Origin {
+				fmt.Printf("      ↪ %s\n", origin.Name)
 			}
-			fmt.Println()
 
 			// Print destination playlists
-			fmt.Print("   🎯 Destinazione: ")
-			for j, dest := range tempPl.Destination {
-				if j > 0 {
-					fmt.Print(" ➕ ")
-				}
-				fmt.Printf("\"%s\"", dest.Name)
+			fmt.Println("   🎯 Destinazione:")
+			for _, dest := range tempPl.Destination {
+				fmt.Printf("      ↪ %s\n", dest.Name)
 			}
 			fmt.Println()
 
@@ -340,22 +333,15 @@ func removeLinkedPlaylist() (err error) {
 			fmt.Printf("   📄 File: %s\n", f.Name())
 
 			// Print origin playlists
-			fmt.Print("   📥 Origine: ")
-			for j, origin := range tempPl.Origin {
-				if j > 0 {
-					fmt.Print(" ➕ ")
-				}
-				fmt.Printf("🎵 %s", origin.Name)
+			fmt.Println("   📥 Origine:")
+			for _, origin := range tempPl.Origin {
+				fmt.Printf("      ↪ %s\n", origin.Name)
 			}
-			fmt.Println()
 
 			// Print destination playlists
-			fmt.Print("   📤 Destinazione: ")
-			for j, dest := range tempPl.Destination {
-				if j > 0 {
-					fmt.Print(" ➕ ")
-				}
-				fmt.Printf("🎯 %s", dest.Name)
+			fmt.Println("   🎯 Destinazione:")
+			for _, dest := range tempPl.Destination {
+				fmt.Printf("      ↪ %s\n", dest.Name)
 			}
 			fmt.Println()
 		}
