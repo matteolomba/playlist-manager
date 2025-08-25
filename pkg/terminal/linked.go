@@ -10,6 +10,8 @@ import (
 
 	"github.com/savioxavier/termlink"
 	spotifyapi "github.com/zmb3/spotify/v2"
+
+	log "playlist-manager/pkg/logger"
 )
 
 type Playlist struct {
@@ -336,7 +338,7 @@ func removeLinkedPlaylist() (err error) {
 			//Print playlist info in a formatted way
 			fmt.Printf("\n🔗 %d. %s\n", i+1, tempPl.Name)
 			fmt.Printf("   📄 File: %s\n", f.Name())
-			
+
 			// Print origin playlists
 			fmt.Print("   📥 Origine: ")
 			for j, origin := range tempPl.Origin {
@@ -346,7 +348,7 @@ func removeLinkedPlaylist() (err error) {
 				fmt.Printf("🎵 %s", origin.Name)
 			}
 			fmt.Println()
-			
+
 			// Print destination playlists
 			fmt.Print("   📤 Destinazione: ")
 			for j, dest := range tempPl.Destination {
@@ -386,13 +388,18 @@ func removeLinkedPlaylist() (err error) {
 }
 
 func updateLinkedPlaylists() (err error) {
+	log.Info("Inizio aggiornamento playlist collegate")
+
 	playlists := []linkedPlaylist{}
 
 	//Get files
 	files, err := os.ReadDir("data/playlists")
 	if err != nil {
+		log.Error("Errore lettura directory playlist", "error", err)
 		return err
 	}
+	log.Info("Playlist collegate trovate", "count", len(files))
+
 	utils.ClearTerminal()
 	fmt.Println("=============================================")
 	fmt.Println("🔄 -> Aggiornamento Playlist Collegate <- 🔄")
@@ -401,12 +408,15 @@ func updateLinkedPlaylists() (err error) {
 
 	if len(files) == 0 {
 		fmt.Println("❌ Nessuna playlist collegata, aggiungine una!")
+		log.Warn("Nessuna playlist collegata trovata")
 		return nil
 	} else {
 		for _, f := range files {
+			log.Info("Caricamento playlist collegata", "file", f.Name())
 			//Read file
 			tempData, err := os.ReadFile("data/playlists/" + f.Name())
 			if err != nil {
+				log.Error("Errore lettura file playlist", "file", f.Name(), "error", err)
 				return err
 			}
 
@@ -414,8 +424,10 @@ func updateLinkedPlaylists() (err error) {
 			var tempPl linkedPlaylist
 			err = json.Unmarshal(tempData, &tempPl)
 			if err != nil {
+				log.Error("Errore parsing JSON playlist", "file", f.Name(), "error", err)
 				return err
 			}
+			log.Info("Playlist collegata caricata", "name", tempPl.Name, "id", tempPl.ID, "origins", len(tempPl.Origin), "destinations", len(tempPl.Destination))
 			playlists = append(playlists, tempPl)
 		}
 	}
@@ -441,22 +453,31 @@ func updateLinkedPlaylists() (err error) {
 
 		//-> Get tracks from origin playlists
 		var originTracks []spotifyapi.ID
+		log.Info("Inizio recupero tracce da playlist origine", "linkedPlaylistName", pl.Name, "originCount", len(pl.Origin))
+
 		for _, p := range pl.Origin {
+			log.Info("Recupero tracce da playlist origine", "playlistName", p.Name, "playlistID", p.ID)
 			//Get tracks from origin playlist
 			tracks, err := spotify.GetTrackIDs(spotifyapi.ID(p.ID))
 			if err != nil {
+				log.Error("Errore nel recupero tracce da playlist origine", "playlistName", p.Name, "playlistID", p.ID, "error", err)
 				return err
 			}
+			log.Info("Tracce recuperate da playlist origine", "playlistName", p.Name, "trackCount", len(tracks))
 			originTracks = append(originTracks, tracks...)
 		}
+		log.Info("Totale tracce origine recuperate", "totalTracks", len(originTracks))
 
 		//-> Compare tracks with destination playlists
 		for _, p := range pl.Destination {
+			log.Info("Inizio processamento playlist destinazione", "playlistName", p.Name, "playlistID", p.ID)
 			//Get tracks from destination playlist
 			destTracks, err := spotify.GetTrackIDs(spotifyapi.ID(p.ID))
 			if err != nil {
+				log.Error("Errore nel recupero tracce da playlist destinazione", "playlistName", p.Name, "playlistID", p.ID, "error", err)
 				return err
 			}
+			log.Info("Tracce recuperate da playlist destinazione", "playlistName", p.Name, "trackCount", len(destTracks))
 
 			//Get tracks that are only in the origin playlists (is the track in the destination playlist?)
 			var tracksToAdd []spotifyapi.ID
@@ -472,20 +493,25 @@ func updateLinkedPlaylists() (err error) {
 					tracksToAdd = append(tracksToAdd, t)
 				}
 			}
+			log.Info("Tracce da aggiungere identificate", "playlistName", p.Name, "tracksToAddCount", len(tracksToAdd))
 
 			//Add songs to destination playlists
 			if len(tracksToAdd) == 0 {
 				fmt.Println("❌ Nessuna canzone da aggiungere a " + p.Name)
+				log.Info("Nessuna traccia da aggiungere", "playlistName", p.Name)
 			} else {
 				if len(tracksToAdd) == 1 {
 					fmt.Println("➕ Aggiungo 1 canzone a " + p.Name)
 				} else {
 					fmt.Printf("➕ Aggiungo %d canzoni a %s\n", len(tracksToAdd), p.Name)
 				}
+				log.Info("Inizio aggiunta tracce alla playlist", "playlistName", p.Name, "playlistID", p.ID, "tracksCount", len(tracksToAdd))
 				err = spotify.AddTracksToPlaylist(tracksToAdd, spotifyapi.ID(p.ID))
 				if err != nil {
+					log.Error("ERRORE nell'aggiunta tracce alla playlist", "playlistName", p.Name, "playlistID", p.ID, "error", err, "tracksCount", len(tracksToAdd))
 					return err
 				}
+				log.Info("Tracce aggiunte con successo", "playlistName", p.Name, "tracksCount", len(tracksToAdd))
 			}
 
 			//Get tracks that are only in the destination playlists (is the track in the origin playlist?)
@@ -502,20 +528,25 @@ func updateLinkedPlaylists() (err error) {
 					tracksToRemove = append(tracksToRemove, dt)
 				}
 			}
+			log.Info("Tracce da rimuovere identificate", "playlistName", p.Name, "tracksToRemoveCount", len(tracksToRemove))
 
 			//Remove songs from destination playlists
 			if len(tracksToRemove) == 0 {
 				fmt.Println("❌ Nessuna canzone da rimuovere da " + p.Name)
+				log.Info("Nessuna traccia da rimuovere", "playlistName", p.Name)
 			} else {
 				if len(tracksToRemove) == 1 {
 					fmt.Println("🗑️ Rimuovo 1 canzone da " + p.Name)
 				} else {
 					fmt.Printf("🗑️ Rimuovo %d canzoni da %s\n", len(tracksToRemove), p.Name)
 				}
+				log.Info("Inizio rimozione tracce dalla playlist", "playlistName", p.Name, "playlistID", p.ID, "tracksCount", len(tracksToRemove))
 				err = spotify.RemoveTracksFromPlaylist(tracksToRemove, spotifyapi.ID(p.ID))
 				if err != nil {
+					log.Error("ERRORE nella rimozione tracce dalla playlist", "playlistName", p.Name, "playlistID", p.ID, "error", err, "tracksCount", len(tracksToRemove))
 					return err
 				}
+				log.Info("Tracce rimosse con successo", "playlistName", p.Name, "tracksCount", len(tracksToRemove))
 			}
 		}
 	}
