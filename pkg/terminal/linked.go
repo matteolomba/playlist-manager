@@ -40,19 +40,20 @@ func linkedMenu() (err error) {
 	}
 
 	for {
-		fmt.Println("--------------------------------------------------------")
-		fmt.Println("Playlist Manager " + VERSION + "\nSviluppato da " + termlink.ColorLink("Matteo Lombardi", "https://github.com/matteolomba", "italic yellow"))
-		fmt.Println("--------------------------------------------------------")
+		fmt.Println("========================================================")
+		fmt.Println("🎧 Playlist Manager " + VERSION + " 🎧\n✨ Sviluppato da " + termlink.ColorLink("Matteo Lombardi", "https://github.com/matteolomba", "italic yellow") + " ✨")
+		fmt.Println("========================================================")
 		displayAuthStatus()
-		fmt.Println("--------------------------------------------------------")
-		fmt.Println("-> Menù Playlist Collegate <-")
-		fmt.Println("--------------------------------------------------------")
-		fmt.Printf("0. Torna al menu principale\n")
+		fmt.Println("========================================================")
+		fmt.Println("🔗 -> Menù Playlist Collegate <- 🔗")
+		fmt.Println("========================================================")
+		fmt.Printf("🔙 0. Torna al menu principale\n")
+		optionEmojis := []string{"👁️", "➕", "🗑️", "🔄"}
 		for i, o := range options {
-			fmt.Printf("%d. %s\n", i+1, o)
+			fmt.Printf("%s %d. %s\n", optionEmojis[i], i+1, o)
 		}
-		fmt.Println("--------------------------------------------------------")
-		fmt.Print("Cosa vuoi fare? ")
+		fmt.Println("========================================================")
+		fmt.Print("❓ Cosa vuoi fare? ")
 		var sel int
 		_, err := fmt.Scan(&sel)
 		if err != nil {
@@ -63,35 +64,40 @@ func linkedMenu() (err error) {
 
 		switch sel {
 		case 0:
+			fmt.Println("🔙 Ritorno al menu principale...")
 			return nil
 		case 1: // Show linked playlists
+			utils.ClearTerminal()
 			err = showLinkedPlaylists()
 			if err != nil {
 				return err
 			}
 
 		case 2: // Add linked playlist
+			utils.ClearTerminal()
 			err = addLinkedPlaylist()
 			if err != nil {
 				return err
 			}
 
 		case 3: // Remove linked playlist
+			utils.ClearTerminal()
 			err = removeLinkedPlaylist()
 			if err != nil {
 				return err
 			}
 
 		case 4: // Update songs in linked playlists
+			utils.ClearTerminal()
 			err = updateLinkedPlaylists()
 			if err != nil {
 				return err
 			}
 
 		default:
-			fmt.Println("Scelta non valida o non ancora implementata")
+			fmt.Println("❌ Scelta non valida o non ancora implementata")
 		}
-		fmt.Printf("\nPremi invio per tornare al menu...")
+		fmt.Printf("\n⏎ Premi invio per tornare al menu...")
 		fmt.Scanf("\n\n")
 		utils.ClearTerminal()
 	}
@@ -106,15 +112,15 @@ func showLinkedPlaylists() (err error) {
 	utils.ClearTerminal()
 
 	if len(files) == 0 {
-		fmt.Println("------------------------------------")
-		fmt.Println("-> Lista delle Playlist Collegate <-")
-		fmt.Println("------------------------------------")
+		fmt.Println("===========================================")
+		fmt.Println("🔗 -> Lista delle Playlist Collegate <- 🔗")
+		fmt.Println("===========================================")
 		fmt.Println()
-		fmt.Println("Nessuna playlist collegata, aggiungine una!")
+		fmt.Println("🕵️ Nessuna playlist collegata, aggiungine una!")
 	} else {
-		fmt.Println("------------------------------------")
-		fmt.Println("-> Lista delle Playlist Collegate <-")
-		fmt.Println("------------------------------------")
+		fmt.Println("===========================================")
+		fmt.Println("🔗 -> Lista delle Playlist Collegate <- 🔗")
+		fmt.Println("===========================================")
 		fmt.Println()
 		for i, f := range files {
 			//Read file
@@ -140,15 +146,21 @@ func showLinkedPlaylists() (err error) {
 				plString += " + " + tempPl.Destination[i].Name
 			}
 
-			fmt.Printf("%d. %s (%s) -> %s\n", i+1, tempPl.Name, f.Name(), plString)
+			fmt.Printf("🔗 %d. %s (%s) -> %s\n", i+1, tempPl.Name, f.Name(), plString)
 		}
 	}
 	return nil
 }
 
 func addLinkedPlaylist() (err error) {
+	utils.ClearTerminal()
+	fmt.Println("==============================================")
+	fmt.Println("➕ -> Aggiunta Nuova Playlist Collegata <- ➕")
+	fmt.Println("==============================================")
+	fmt.Println()
+
 	lp := linkedPlaylist{}
-	fmt.Print("Che nome vuoi dare al collegamento tra le playlist? ")
+	fmt.Print("🎵 Che nome vuoi dare al collegamento tra le playlist? ")
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
 		if scanner.Text() != "" {
@@ -164,15 +176,17 @@ func addLinkedPlaylist() (err error) {
 
 	//Origin playlist selection
 	for {
-		fmt.Println("------------------------------------------------------")
-		fmt.Println("-> Seleziona la playlist da aggiungere come origine <-")
-		fmt.Println("------------------------------------------------------")
-		fmt.Println("0. Annulla e torna indietro")
+		utils.ClearTerminal()
+		fmt.Println("=============================================================")
+		fmt.Println("🎯 -> Seleziona la playlist da aggiungere come origine <- 🎯")
+		fmt.Println("=============================================================")
+		fmt.Println()
+		fmt.Println("🚪 0. Annulla e torna indietro")
 		for i, p := range pl {
-			fmt.Printf("%d. %s - %s\n", i+1, p.Name, p.ID)
+			fmt.Printf("📋 %d. %s - %s\n", i+1, p.Name, p.ID)
 		}
-		fmt.Println("------------------------------------------------------")
-		fmt.Print("Inserisci il numero della playlist da aggiungere come origine: ")
+		fmt.Println("=============================================================")
+		fmt.Print("⏎ Inserisci il numero della playlist da aggiungere come origine: ")
 		var sel int
 		_, err = fmt.Scan(&sel)
 		if err != nil {
@@ -200,17 +214,25 @@ func addLinkedPlaylist() (err error) {
 		}
 	}
 
+	// Verifica se l'utente ha annullato senza configurare playlist origin
+	if len(lp.Origin) == 0 {
+		fmt.Println("🚪 Operazione annullata dall'utente")
+		return nil
+	}
+
 	//Destination playlist selection
 	for {
-		fmt.Println("-----------------------------------------------------------")
-		fmt.Println("-> Seleziona la playlist da aggiungere come destinazione <-")
-		fmt.Println("-----------------------------------------------------------")
-		fmt.Println("0. Annulla e torna indietro")
+		utils.ClearTerminal()
+		fmt.Println("==================================================================")
+		fmt.Println("🎯 -> Seleziona la playlist da aggiungere come destinazione <- 🎯")
+		fmt.Println("==================================================================")
+		fmt.Println()
+		fmt.Println("🚪 0. Annulla e torna indietro")
 		for i, p := range pl {
-			fmt.Printf("%d. %s - %s\n", i+1, p.Name, p.ID)
+			fmt.Printf("📋 %d. %s - %s\n", i+1, p.Name, p.ID)
 		}
-		fmt.Println("-----------------------------------------------------------")
-		fmt.Print("Inserisci il numero della playlist da aggiungere come destinazione: ")
+		fmt.Println("==================================================================")
+		fmt.Print("⏎ Inserisci il numero della playlist da aggiungere come destinazione: ")
 		var sel int
 		_, err = fmt.Scan(&sel)
 		if err != nil {
@@ -220,11 +242,11 @@ func addLinkedPlaylist() (err error) {
 		if sel == 0 {
 			break
 		} else if sel < 1 || sel > len(pl) {
-			fmt.Println("Selezione non valida")
+			fmt.Println("❌ Selezione non valida")
 		} else {
 			lp.Destination = append(lp.Destination, Playlist{ID: string(pl[sel-1].ID), Name: pl[sel-1].Name})
 
-			fmt.Print("Vuoi aggiungere un'altra playlist come destinazione? (s/n) ")
+			fmt.Print("❓ Vuoi aggiungere un'altra playlist come destinazione? (s/n) ")
 			var sel string
 			_, err = fmt.Scan(&sel)
 			if err != nil {
@@ -234,6 +256,12 @@ func addLinkedPlaylist() (err error) {
 				break
 			}
 		}
+	}
+
+	// Verifica se l'utente ha annullato senza configurare playlist destination
+	if len(lp.Destination) == 0 {
+		fmt.Println("🚪 Operazione annullata dall'utente")
+		return nil
 	}
 
 	//Generate the random ID
@@ -255,18 +283,25 @@ func addLinkedPlaylist() (err error) {
 }
 
 func removeLinkedPlaylist() (err error) {
+	utils.ClearTerminal()
+	fmt.Println("=========================================")
+	fmt.Println("🗑️ -> Rimozione Playlist Collegata <- 🗑️")
+	fmt.Println("=========================================")
+	fmt.Println()
+
 	files, err := os.ReadDir("data/playlists")
 	if err != nil {
 		return err
 	}
 
 	if len(files) == 0 {
-		fmt.Println("Nessuna playlist collegata, aggiungine una!")
+		fmt.Println("❌ Nessuna playlist collegata, aggiungine una!")
 	} else {
-		fmt.Println("--------------------------------------------------")
-		fmt.Println("-> Seleziona la playlist collegata da rimuovere <-")
-		fmt.Println("--------------------------------------------------")
-		fmt.Println("0. Annulla e torna indietro")
+		fmt.Println("=========================================================")
+		fmt.Println("🎯 -> Seleziona la playlist collegata da rimuovere <- 🎯")
+		fmt.Println("=========================================================")
+		fmt.Println()
+		fmt.Println("🚪 0. Annulla e torna indietro")
 		for i, f := range files {
 			//Read file
 			tempData, err := os.ReadFile("data/playlists/" + f.Name())
@@ -291,11 +326,11 @@ func removeLinkedPlaylist() (err error) {
 				plString += " + " + tempPl.Destination[i].Name
 			}
 
-			fmt.Printf("%d. %s (%s) -> %s\n", i+1, tempPl.Name, f.Name(), plString)
+			fmt.Printf("🔗 %d. %s (%s) -> %s\n", i+1, tempPl.Name, f.Name(), plString)
 		}
 
-		fmt.Println("--------------------------------------------------")
-		fmt.Print("Inserisci il numero della playlist collegata da rimuovere: ")
+		fmt.Println("======================================================")
+		fmt.Print("⏎ Inserisci il numero della playlist collegata da rimuovere: ")
 		var sel int
 		_, err = fmt.Scan(&sel)
 		if err != nil {
@@ -303,17 +338,18 @@ func removeLinkedPlaylist() (err error) {
 		}
 
 		if sel == 0 {
+			fmt.Println("🚪 Operazione annullata dall'utente")
 			return nil
 		} else if sel < 1 || sel > len(files) {
-			fmt.Println("Selezione non valida")
-			fmt.Printf("\nPremi invio per tornare al menu...")
+			fmt.Println("❌ Selezione non valida")
+			fmt.Printf("\n⏎ Premi invio per tornare al menu...")
 			fmt.Scanf("\n\n")
 		} else {
 			err = os.Remove("data/playlists/" + files[sel-1].Name())
 			if err != nil {
 				return err
 			}
-			fmt.Println("Playlist data/playlists/" + files[sel-1].Name() + " rimossa con successo")
+			fmt.Println("✅ Playlist data/playlists/" + files[sel-1].Name() + " rimossa con successo")
 		}
 
 	}
@@ -329,9 +365,13 @@ func updateLinkedPlaylists() (err error) {
 		return err
 	}
 	utils.ClearTerminal()
+	fmt.Println("=============================================")
+	fmt.Println("🔄 -> Aggiornamento Playlist Collegate <- 🔄")
+	fmt.Println("=============================================")
+	fmt.Println()
 
 	if len(files) == 0 {
-		fmt.Println("Nessuna playlist collegata, aggiungine una!")
+		fmt.Println("❌ Nessuna playlist collegata, aggiungine una!")
 		return nil
 	} else {
 		for _, f := range files {
@@ -351,12 +391,12 @@ func updateLinkedPlaylists() (err error) {
 		}
 	}
 
-	fmt.Println("----------------------------------------------------------------------")
-	fmt.Println("->          Aggiorno le canzoni nelle playlist collegate            <-")
+	fmt.Println("=============================================================================")
+	fmt.Println("🎵 ->          Aggiorno le canzoni nelle playlist collegate            <- 🎵")
 
 	for _, pl := range playlists {
-		fmt.Println("----------------------------------------------------------------------")
-		fmt.Println("Playlist: " + pl.Name + " (" + pl.ID + ")")
+		fmt.Println("=============================================================================")
+		fmt.Println("🎧 Playlist: " + pl.Name + " (" + pl.ID + ")")
 
 		//Print linked playlist info (origin + destination)
 		plString := pl.Origin[0].Name
@@ -367,8 +407,8 @@ func updateLinkedPlaylists() (err error) {
 		for i := 1; i < len(pl.Destination); i++ {
 			plString += " + " + pl.Destination[i].Name
 		}
-		fmt.Println(plString)
-		fmt.Println("->                                                                  <-")
+		fmt.Println("🔗 " + plString)
+		fmt.Println("⏳ ->                                                                    <- ⏳")
 
 		//-> Get tracks from origin playlists
 		var originTracks []spotifyapi.ID
@@ -406,12 +446,12 @@ func updateLinkedPlaylists() (err error) {
 
 			//Add songs to destination playlists
 			if len(tracksToAdd) == 0 {
-				fmt.Println("Nessuna canzone da aggiungere a " + p.Name)
+				fmt.Println("❌ Nessuna canzone da aggiungere a " + p.Name)
 			} else {
 				if len(tracksToAdd) == 1 {
-					fmt.Println("Aggiungo 1 canzone a " + p.Name)
+					fmt.Println("➕ Aggiungo 1 canzone a " + p.Name)
 				} else {
-					fmt.Printf("Aggiungo %d canzoni a %s\n", len(tracksToAdd), p.Name)
+					fmt.Printf("➕ Aggiungo %d canzoni a %s\n", len(tracksToAdd), p.Name)
 				}
 				err = spotify.AddTracksToPlaylist(tracksToAdd, spotifyapi.ID(p.ID))
 				if err != nil {
@@ -436,12 +476,12 @@ func updateLinkedPlaylists() (err error) {
 
 			//Remove songs from destination playlists
 			if len(tracksToRemove) == 0 {
-				fmt.Println("Nessuna canzone da rimuovere da " + p.Name)
+				fmt.Println("❌ Nessuna canzone da rimuovere da " + p.Name)
 			} else {
 				if len(tracksToRemove) == 1 {
-					fmt.Println("Rimuovo 1 canzone da " + p.Name)
+					fmt.Println("🗑️ Rimuovo 1 canzone da " + p.Name)
 				} else {
-					fmt.Printf("Rimuovo %d canzoni da %s\n", len(tracksToRemove), p.Name)
+					fmt.Printf("🗑️ Rimuovo %d canzoni da %s\n", len(tracksToRemove), p.Name)
 				}
 				err = spotify.RemoveTracksFromPlaylist(tracksToRemove, spotifyapi.ID(p.ID))
 				if err != nil {
@@ -451,5 +491,8 @@ func updateLinkedPlaylists() (err error) {
 		}
 	}
 
+	fmt.Println("================================================================")
+	fmt.Println("✅ Aggiornamento playlist collegate completato con successo! ✅")
+	fmt.Println("================================================================")
 	return nil
 }
