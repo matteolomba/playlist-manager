@@ -433,7 +433,7 @@ func SavePlaylistAsJSON(p api.SimplePlaylist, userID string) (backupDir string, 
 	today := time.Now().Format("2006-01-02")
 	// Save directory based on if it's a user playlist or not
 	if p.Owner.ID != userID {
-		backupDir = "data/backup/altre/" + today
+		backupDir = "data/backup/" + userID + "/altre/" + today
 		err = os.MkdirAll(backupDir, 0755)
 		if err != nil {
 			return backupDir, err

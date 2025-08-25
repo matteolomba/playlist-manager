@@ -209,26 +209,75 @@ func Display() (err error) {
 
 		case 5: // Restore playlist from JSON file
 			log.Info("L'utente ha richiesto il ripristino di una playlist", "userID", userID)
-			// Prima selezioniamo la cartella dell'utente e la data
-			userBackupDir := "data/backup/" + userID
-			if _, err := os.Stat(userBackupDir); os.IsNotExist(err) {
-				log.Warn("Nessun backup trovato per l'utente", "userID", userID, "backupDir", userBackupDir)
-				fmt.Println("Nessun backup trovato per l'utente corrente.")
+
+			// Prima scelta: playlist proprie o di altri
+			fmt.Println("Che playlist vuoi ripristinare?")
+			fmt.Println("1. Una delle tue personali")
+			fmt.Println("2. Una di un altro utente")
+			fmt.Println("0. Torna al menu")
+			fmt.Print("Scelta: ")
+
+			var ownerChoice int
+			_, err := fmt.Scan(&ownerChoice)
+			if err != nil {
+				log.Error("Errore nella lettura della scelta sul proprietario", "error", err, "userID", userID)
+				return err
+			}
+
+			if ownerChoice == 0 {
+				log.Info("L'utente ha annullato il ripristino", "userID", userID)
+				break
+			}
+
+			var backupDir string
+			var isPersonal bool
+
+			switch ownerChoice {
+			case 1:
+				// Playlist personali
+				backupDir = "data/backup/" + userID
+				isPersonal = true
+				log.Info("L'utente ha scelto di ripristinare una playlist personale", "userID", userID)
+			case 2:
+				// Playlist di altri (nella cartella altre dell'utente)
+				backupDir = "data/backup/" + userID + "/altre"
+				isPersonal = false
+				log.Info("L'utente ha scelto di ripristinare una playlist di un altro utente", "userID", userID, "backupDir", backupDir)
+			default:
+				log.Warn("Scelta del proprietario non valida", "choice", ownerChoice, "userID", userID)
+				fmt.Println("Scelta non valida")
+				fmt.Printf("\nPremi invio per tornare al menu...")
+				fmt.Scanf("\n\n")
+				continue // Torna al menu principale invece di break
+			}
+
+			// Verifica esistenza cartella
+			if _, err := os.Stat(backupDir); os.IsNotExist(err) {
+				log.Warn("Nessun backup trovato", "userID", userID, "backupDir", backupDir, "isPersonal", isPersonal)
+				if isPersonal {
+					fmt.Println("Nessun backup di tue playlist trovato")
+				} else {
+					fmt.Println("Nessun backup di playlist di altri trovato")
+				}
 				fmt.Printf("\nPremi invio per tornare al menu...")
 				fmt.Scanf("\n\n")
 				break
 			}
 
-			//Get date directories for this user
-			dateDirs, err := os.ReadDir(userBackupDir)
+			//Get date directories
+			dateDirs, err := os.ReadDir(backupDir)
 			if err != nil {
-				log.Error("Errore nella lettura delle cartelle di backup", "error", err, "userID", userID, "backupDir", userBackupDir)
+				log.Error("Errore nella lettura delle cartelle di backup", "error", err, "userID", userID, "backupDir", backupDir)
 				return err
 			}
 
 			if len(dateDirs) == 0 {
-				log.Info("Nessuna cartella di backup trovata per l'utente", "userID", userID)
-				fmt.Println("Nessun backup trovato per l'utente corrente.")
+				log.Info("Nessuna cartella di backup trovata", "userID", userID, "backupDir", backupDir)
+				if isPersonal {
+					fmt.Println("Nessun backup trovato per l'utente corrente")
+				} else {
+					fmt.Println("Nessun backup di playlist di altri trovato")
+				}
 				fmt.Printf("\nPremi invio per tornare al menu...")
 				fmt.Scanf("\n\n")
 				break
@@ -240,6 +289,10 @@ func Display() (err error) {
 			dateIndex := 1
 			for _, d := range dateDirs {
 				if d.IsDir() {
+					// Se siamo nelle playlist personali, nascondi la cartella "altre"
+					if isPersonal && d.Name() == "altre" {
+						continue
+					}
 					fmt.Printf("%d. %s\n", dateIndex, d.Name())
 					validDateDirs = append(validDateDirs, d)
 					dateIndex++
@@ -276,8 +329,8 @@ func Display() (err error) {
 			}
 
 			selectedDateDir := validDateDirs[dateSelect-1].Name()
-			playlistDir := userBackupDir + "/" + selectedDateDir
-			log.Info("Data selezionata per il ripristino", "date", selectedDateDir, "userID", userID)
+			playlistDir := backupDir + "/" + selectedDateDir
+			log.Info("Data selezionata per il ripristino", "date", selectedDateDir, "userID", userID, "isPersonal", isPersonal)
 
 			//Get playlist files from selected date
 			files, err := os.ReadDir(playlistDir)
