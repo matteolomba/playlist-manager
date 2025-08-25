@@ -405,11 +405,11 @@ func RemoveTracksFromPlaylist(trackList []api.ID, playlistID api.ID) (err error)
 	return nil
 }
 
-func SavePlaylistAsJSON(p api.SimplePlaylist) error {
+func SavePlaylistAsJSON(p api.SimplePlaylist, userID string) (backupDir string, err error) {
 	//Get tracks and convert to JSON
 	tracks, err := GetTracks(p.ID)
 	if err != nil {
-		return err
+		return backupDir, err
 	}
 
 	var trackIDS []api.ID
@@ -427,14 +427,31 @@ func SavePlaylistAsJSON(p api.SimplePlaylist) error {
 	}
 	jsonData, err := json.Marshal(playlist)
 	if err != nil {
-		return err
+		return backupDir, err
+	}
+
+	today := time.Now().Format("2006-01-02")
+	// Save directory based on if it's a user playlist or not
+	if p.Owner.ID != userID {
+		backupDir = "data/backup/altre/" + today
+		err = os.MkdirAll(backupDir, 0755)
+		if err != nil {
+			return backupDir, err
+		}
+	} else {
+		// Create directory with userID and today's date
+		backupDir = "data/backup/" + userID + "/" + today
+		err = os.MkdirAll(backupDir, 0755)
+		if err != nil {
+			return backupDir, err
+		}
 	}
 
 	//Write file
-	err = os.WriteFile("data/backup/"+string(p.ID)+".json", jsonData, 0644)
+	err = os.WriteFile(backupDir+"/"+string(p.ID)+".json", jsonData, 0644)
 	if err != nil {
-		return err
+		return backupDir, err
 	}
 
-	return nil
+	return backupDir, nil
 }
