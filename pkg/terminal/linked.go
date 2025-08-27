@@ -14,6 +14,69 @@ import (
 	log "playlist-manager/pkg/logger"
 )
 
+// Struttura per rappresentare i dettagli di una traccia
+type TrackDetails struct {
+	ID     string
+	Name   string
+	Artist string
+}
+
+// Funzione helper per recuperare i dettagli delle tracce
+func getTrackDetails(trackIDs []spotifyapi.ID) ([]TrackDetails, error) {
+	if len(trackIDs) == 0 {
+		return []TrackDetails{}, nil
+	}
+
+	// Usa la nuova funzione dell'API Spotify
+	spotifyTracks, err := spotify.GetTrackDetails(trackIDs)
+	if err != nil {
+		log.Warn("Errore nel recupero dettagli tracce dall'API Spotify", "error", err)
+		// In caso di errore, restituisce i dettagli base con gli ID
+		var details []TrackDetails
+		for _, id := range trackIDs {
+			details = append(details, TrackDetails{
+				ID:     string(id),
+				Name:   string(id),
+				Artist: "Informazioni non disponibili",
+			})
+		}
+		return details, nil
+	}
+
+	var details []TrackDetails
+	for _, track := range spotifyTracks {
+		if track == nil {
+			continue
+		}
+
+		// Costruisci la stringa degli artisti
+		var artists []string
+		for _, artist := range track.Artists {
+			artists = append(artists, artist.Name)
+		}
+		artistsStr := "Artista sconosciuto"
+		if len(artists) > 0 {
+			if len(artists) == 1 {
+				artistsStr = artists[0]
+			} else {
+				// Per più artisti, usa il formato "Artista1, Artista2"
+				artistsStr = artists[0]
+				for i := 1; i < len(artists); i++ {
+					artistsStr += ", " + artists[i]
+				}
+			}
+		}
+
+		details = append(details, TrackDetails{
+			ID:     string(track.ID),
+			Name:   track.Name + " di " + artistsStr,
+			Artist: artistsStr,
+		})
+	}
+
+	return details, nil
+}
+
 type Playlist struct {
 	ID   string
 	Name string
@@ -123,7 +186,6 @@ func showLinkedPlaylists() (err error) {
 		fmt.Println("===========================================")
 		fmt.Println("🔗 -> Lista delle Playlist Collegate <- 🔗")
 		fmt.Println("===========================================")
-		fmt.Println()
 		for i, f := range files {
 			//Read file
 			tempData, err := os.ReadFile("data/playlists/" + f.Name())
@@ -157,7 +219,7 @@ func showLinkedPlaylists() (err error) {
 
 			// Add separator line between playlists (except for the last one)
 			if i < len(files)-1 {
-				fmt.Println("   ─────────────────────────────────────")
+				fmt.Println("───────────────────────────────────────")
 			}
 		}
 	}
@@ -396,46 +458,82 @@ func updateLinkedPlaylists() (err error) {
 		fmt.Println("❌ Nessuna playlist collegata, aggiungine una!")
 		log.Warn("Nessuna playlist collegata trovata")
 		return nil
-	} else {
-		for _, f := range files {
-			log.Info("Caricamento playlist collegata", "file", f.Name())
-			//Read file
-			tempData, err := os.ReadFile("data/playlists/" + f.Name())
-			if err != nil {
-				log.Error("Errore lettura file playlist", "file", f.Name(), "error", err)
-				return err
-			}
-
-			//Parse JSON
-			var tempPl linkedPlaylist
-			err = json.Unmarshal(tempData, &tempPl)
-			if err != nil {
-				log.Error("Errore parsing JSON playlist", "file", f.Name(), "error", err)
-				return err
-			}
-			log.Info("Playlist collegata caricata", "name", tempPl.Name, "id", tempPl.ID, "origins", len(tempPl.Origin), "destinations", len(tempPl.Destination))
-			playlists = append(playlists, tempPl)
-		}
 	}
 
-	fmt.Println("=============================================================================")
-	fmt.Println("🎵 ->          Aggiorno le canzoni nelle playlist collegate            <- 🎵")
+	// Menu per scegliere il tipo di operazione
+	fmt.Println("🎯 Che tipo di aggiornamento vuoi eseguire?")
+	fmt.Println("==========================================")
+	fmt.Println("➕ 1. Solo aggiunta canzoni (da origine a destinazione)")
+	fmt.Println("🗑️ 2. Solo rimozione canzoni (dalle destinazioni)")
+	fmt.Println("🔄 3. Sia aggiungere che rimuovere canzoni")
+	fmt.Println("🚪 0. Annulla e torna indietro")
+	fmt.Println("==========================================")
+	fmt.Print("❓ Cosa vuoi fare? ")
+
+	var operationType int
+	_, err = fmt.Scan(&operationType)
+	if err != nil {
+		return err
+	}
+
+	if operationType == 0 {
+		fmt.Println("🚪 Operazione annullata dall'utente")
+		return nil
+	}
+
+	if operationType < 1 || operationType > 3 {
+		fmt.Println("❌ Scelta non valida")
+		return nil
+	}
+
+	addSongs := operationType == 1 || operationType == 3
+	removeSongs := operationType == 2 || operationType == 3
+
+	log.Info("Tipo di operazione selezionata", "operationType", operationType, "addSongs", addSongs, "removeSongs", removeSongs)
+
+	utils.ClearTerminal()
+	fmt.Println("=============================================")
+	fmt.Println("🔄 -> Aggiornamento Playlist Collegate <- 🔄")
+	fmt.Println("=============================================")
+	fmt.Println()
+
+	for _, f := range files {
+		log.Info("Caricamento playlist collegata", "file", f.Name())
+		//Read file
+		tempData, err := os.ReadFile("data/playlists/" + f.Name())
+		if err != nil {
+			log.Error("Errore lettura file playlist", "file", f.Name(), "error", err)
+			return err
+		}
+
+		//Parse JSON
+		var tempPl linkedPlaylist
+		err = json.Unmarshal(tempData, &tempPl)
+		if err != nil {
+			log.Error("Errore parsing JSON playlist", "file", f.Name(), "error", err)
+			return err
+		}
+		log.Info("Playlist collegata caricata", "name", tempPl.Name, "id", tempPl.ID, "origins", len(tempPl.Origin), "destinations", len(tempPl.Destination))
+		playlists = append(playlists, tempPl)
+	}
 
 	for _, pl := range playlists {
-		fmt.Println("=============================================================================")
-		fmt.Println("🎧 Playlist: " + pl.Name + " (" + pl.ID + ")")
+		fmt.Println("┌──────────────────────────────────────────────────────────────────────────────────────────")
+		fmt.Printf("│ 🎧 Playlist: %s (%s)\n", pl.Name, pl.ID)
 
 		//Print linked playlist info (origin + destination)
-		plString := pl.Origin[0].Name
+		plString := "\"" + pl.Origin[0].Name + "\""
 		for i := 1; i < len(pl.Origin); i++ {
-			plString += " + " + pl.Origin[i].Name
+			plString += " + \"" + pl.Origin[i].Name + "\""
 		}
-		plString += " = " + pl.Destination[0].Name
+		plString += "  ➜  \"" + pl.Destination[0].Name + "\""
 		for i := 1; i < len(pl.Destination); i++ {
-			plString += " + " + pl.Destination[i].Name
+			plString += " + \"" + pl.Destination[i].Name + "\""
 		}
-		fmt.Println("🔗 " + plString)
-		fmt.Println("⏳ ->                                                                    <- ⏳")
+		fmt.Printf("│ 🔗 %s\n", plString)
+		fmt.Println("│")
+		fmt.Printf("│ ⏳ Elaborazione in corso...\n")
+		fmt.Println("├──────────────────────────────────────────────────────────────────────────────────────────")
 
 		//-> Get tracks from origin playlists
 		var originTracks []spotifyapi.ID
@@ -482,22 +580,46 @@ func updateLinkedPlaylists() (err error) {
 			log.Info("Tracce da aggiungere identificate", "playlistName", p.Name, "tracksToAddCount", len(tracksToAdd))
 
 			//Add songs to destination playlists
-			if len(tracksToAdd) == 0 {
-				fmt.Println("❌ Nessuna canzone da aggiungere a " + p.Name)
-				log.Info("Nessuna traccia da aggiungere", "playlistName", p.Name)
-			} else {
-				if len(tracksToAdd) == 1 {
-					fmt.Println("➕ Aggiungo 1 canzone a " + p.Name)
+			if addSongs {
+				if len(tracksToAdd) == 0 {
+					fmt.Printf("│ ❌ Nessuna canzone da aggiungere a %s\n", p.Name)
+					log.Info("Nessuna traccia da aggiungere", "playlistName", p.Name)
 				} else {
-					fmt.Printf("➕ Aggiungo %d canzoni a %s\n", len(tracksToAdd), p.Name)
+					// Mostra l'operazione in corso
+					if len(tracksToAdd) == 1 {
+						fmt.Printf("│ ⏳ Aggiunta di 1 canzone a %s...\n", p.Name)
+					} else {
+						fmt.Printf("│ ⏳ Aggiunta di %d canzoni a %s...\n", len(tracksToAdd), p.Name)
+					}
+
+					log.Info("Inizio aggiunta tracce alla playlist", "playlistName", p.Name, "playlistID", p.ID, "tracksCount", len(tracksToAdd))
+					err = spotify.AddTracksToPlaylist(tracksToAdd, spotifyapi.ID(p.ID))
+					if err != nil {
+						log.Error("ERRORE nell'aggiunta tracce alla playlist", "playlistName", p.Name, "playlistID", p.ID, "error", err, "tracksCount", len(tracksToAdd))
+						return err
+					}
+					log.Info("Tracce aggiunte con successo", "playlistName", p.Name, "tracksCount", len(tracksToAdd))
+
+					// Mostra il risultato completato
+					if len(tracksToAdd) == 1 {
+						fmt.Printf("│ ✅ Aggiunta 1 canzone a %s\n", p.Name)
+					} else {
+						fmt.Printf("│ ✅ Aggiunte %d canzoni a %s\n", len(tracksToAdd), p.Name)
+					}
+
+					// Mostra l'elenco delle canzoni aggiunte
+					fmt.Printf("│     🎵 Canzoni aggiunte:\n")
+					trackDetails, err := getTrackDetails(tracksToAdd)
+					if err != nil {
+						log.Warn("Errore nel recupero dettagli tracce aggiunte", "error", err)
+					} else {
+						for _, track := range trackDetails {
+							fmt.Printf("│       ↪ %s\n", track.Name)
+						}
+					}
 				}
-				log.Info("Inizio aggiunta tracce alla playlist", "playlistName", p.Name, "playlistID", p.ID, "tracksCount", len(tracksToAdd))
-				err = spotify.AddTracksToPlaylist(tracksToAdd, spotifyapi.ID(p.ID))
-				if err != nil {
-					log.Error("ERRORE nell'aggiunta tracce alla playlist", "playlistName", p.Name, "playlistID", p.ID, "error", err, "tracksCount", len(tracksToAdd))
-					return err
-				}
-				log.Info("Tracce aggiunte con successo", "playlistName", p.Name, "tracksCount", len(tracksToAdd))
+			} else {
+				log.Info("Aggiunta canzoni saltata per scelta utente", "playlistName", p.Name)
 			}
 
 			//Get tracks that are only in the destination playlists (is the track in the origin playlist?)
@@ -517,28 +639,57 @@ func updateLinkedPlaylists() (err error) {
 			log.Info("Tracce da rimuovere identificate", "playlistName", p.Name, "tracksToRemoveCount", len(tracksToRemove))
 
 			//Remove songs from destination playlists
-			if len(tracksToRemove) == 0 {
-				fmt.Println("❌ Nessuna canzone da rimuovere da " + p.Name)
-				log.Info("Nessuna traccia da rimuovere", "playlistName", p.Name)
-			} else {
-				if len(tracksToRemove) == 1 {
-					fmt.Println("🗑️ Rimuovo 1 canzone da " + p.Name)
+			if removeSongs {
+				if len(tracksToRemove) == 0 {
+					fmt.Printf("│ ❌ Nessuna canzone da rimuovere da %s\n", p.Name)
+					log.Info("Nessuna traccia da rimuovere", "playlistName", p.Name)
 				} else {
-					fmt.Printf("🗑️ Rimuovo %d canzoni da %s\n", len(tracksToRemove), p.Name)
+					// Mostra l'operazione in corso
+					if len(tracksToRemove) == 1 {
+						fmt.Printf("│ ⏳ Rimozione di 1 canzone da %s...\n", p.Name)
+					} else {
+						fmt.Printf("│ ⏳ Rimozione di %d canzoni da %s...\n", len(tracksToRemove), p.Name)
+					}
+
+					log.Info("Inizio rimozione tracce dalla playlist", "playlistName", p.Name, "playlistID", p.ID, "tracksCount", len(tracksToRemove))
+					err = spotify.RemoveTracksFromPlaylist(tracksToRemove, spotifyapi.ID(p.ID))
+					if err != nil {
+						log.Error("ERRORE nella rimozione tracce dalla playlist", "playlistName", p.Name, "playlistID", p.ID, "error", err, "tracksCount", len(tracksToRemove))
+						return err
+					}
+					log.Info("Tracce rimosse con successo", "playlistName", p.Name, "tracksCount", len(tracksToRemove))
+
+					// Mostra il risultato completato
+					if len(tracksToRemove) == 1 {
+						fmt.Printf("│ ✅ Rimossa 1 canzone da %s\n", p.Name)
+					} else {
+						fmt.Printf("│ ✅ Rimosse %d canzoni da %s\n", len(tracksToRemove), p.Name)
+					}
+
+					// Mostra l'elenco delle canzoni rimosse
+					fmt.Printf("│    🎵 Canzoni rimosse:\n")
+					trackDetails, err := getTrackDetails(tracksToRemove)
+					if err != nil {
+						log.Warn("Errore nel recupero dettagli tracce rimosse", "error", err)
+					} else {
+						for _, track := range trackDetails {
+							fmt.Printf("│       ↪ %s\n", track.Name)
+						}
+					}
 				}
-				log.Info("Inizio rimozione tracce dalla playlist", "playlistName", p.Name, "playlistID", p.ID, "tracksCount", len(tracksToRemove))
-				err = spotify.RemoveTracksFromPlaylist(tracksToRemove, spotifyapi.ID(p.ID))
-				if err != nil {
-					log.Error("ERRORE nella rimozione tracce dalla playlist", "playlistName", p.Name, "playlistID", p.ID, "error", err, "tracksCount", len(tracksToRemove))
-					return err
-				}
-				log.Info("Tracce rimosse con successo", "playlistName", p.Name, "tracksCount", len(tracksToRemove))
+			} else {
+				log.Info("Rimozione canzoni saltata per scelta utente", "playlistName", p.Name)
 			}
 		}
+
+		// Separatore tra playlist
+		fmt.Println("└──────────────────────────────────────────────────────────────────────────────────────────")
+		fmt.Println()
 	}
 
-	fmt.Println("================================================================")
-	fmt.Println("✅ Aggiornamento playlist collegate completato con successo! ✅")
-	fmt.Println("================================================================")
+	fmt.Println("╔════════════════════════════════════════════════════════════╗")
+	fmt.Println("║               ✅ AGGIORNAMENTO COMPLETATO ✅               ║")
+	fmt.Println("║     Tutte le playlist collegate sono state aggiornate!     ║")
+	fmt.Println("╚════════════════════════════════════════════════════════════╝")
 	return nil
 }

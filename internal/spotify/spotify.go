@@ -366,6 +366,36 @@ func GetUserID() (string, error) {
 }
 
 /*
+GetTrackDetails returns the details (name, artists) for a list of track IDs
+*/
+func GetTrackDetails(trackIDs []api.ID) ([]*api.FullTrack, error) {
+	if len(trackIDs) == 0 {
+		return []*api.FullTrack{}, nil
+	}
+
+	var allTracks []*api.FullTrack
+
+	// L'API Spotify permette massimo 50 tracce per chiamata
+	for i := 0; i < len(trackIDs); i += 50 {
+		var batchIDs []api.ID
+		if i+50 > len(trackIDs) {
+			batchIDs = trackIDs[i:]
+		} else {
+			batchIDs = trackIDs[i : i+50]
+		}
+
+		tracks, err := client.GetTracks(context, batchIDs)
+		if err != nil {
+			return nil, err
+		}
+
+		allTracks = append(allTracks, tracks...)
+	}
+
+	return allTracks, nil
+}
+
+/*
 AddTracksToPlaylist adds the tracks (given the ID) from trackList to playlist given its ID (playlistID)
 Returns an error, if present
 */

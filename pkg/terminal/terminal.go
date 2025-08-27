@@ -16,7 +16,7 @@ import (
 
 var userID string
 
-const VERSION = "0.3.7"
+const VERSION = "0.3.8"
 
 func Display() (err error) {
 	log.Info("Avvio di Playlist Manager", "version", VERSION)
