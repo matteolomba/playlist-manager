@@ -1,4 +1,4 @@
-# playlist-manager
+# playlist-manager-cli
 
 Applicazione da terminale per gestire delle playlist su [Spotify](https://spotify.com)
 
