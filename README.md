@@ -7,7 +7,7 @@ Applicazione da terminale per gestire delle playlist su [Spotify](https://spotif
 
 ⚠️ Quello che c'è dovrebbe funzionare ma non è garantito, ho effettuato un test ridotto
 
-🐛 Se trovi un problema o vorresti una nuova funzionalità apri un [issue](https://github.com/matteolomba/playlist-manager/issues) o una [pull request](https://github.com/matteolomba/playlist-manager/pulls)
+🐛 Se trovi un problema o vorresti una nuova funzionalità apri un [issue](https://github.com/matteolomba/playlist-manager-cli/issues) o una [pull request](https://github.com/matteolomba/playlist-manager-cli/pulls)
 
 ## Cosa ci puoi fare
 
